@@ -17,27 +17,27 @@
   tech: ["Python", "PyTorch", "Materials Science", "DFT"]
   image: "/assets/img/projects/defect-ml.png"
   links:
-    code: "https://github.com/wonjuncio"
+    code: "https://github.com/wonjunchoii"
 
 - title: "Real-Time Fetal Monitor Tracking System"
   description: "Computer vision based real-time fetal heart rate monitoring system using object detection and tracking."
   tech: ["Python", "OpenCV", "YOLO", "Deep Learning"]
   image: "/assets/img/projects/fetal-monitor.png"
   links:
-    code: "https://github.com/wonjuncio"
+    code: "https://github.com/wonjunchoii"
 
 - title: "Heat-Mass Transfer Simulation"
   description: "Finite element simulation of heat and mass transfer in exhaust pipe scenario using COMSOL and Python."
   tech: ["Python", "COMSOL", "FEM", "Simulation"]
   image: "/assets/img/projects/heat-transfer.png"
   links:
-    code: "https://github.com/wonjuncio"
+    code: "https://github.com/wonjunchoii"
 
 - title: "2D/3D Binary Substitutional Alloy Simulation"
   description: "Monte Carlo simulation of binary substitutional alloys in 2D and 3D lattice structures."
   tech: ["Python", "Monte Carlo", "Materials Science"]
   image: "/assets/img/projects/alloy-sim.png"
   links:
-    code: "https://github.com/wonjuncio"
+    code: "https://github.com/wonjunchoii"
 
 

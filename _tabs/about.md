@@ -62,7 +62,7 @@ order: 4
         <i class="fas fa-envelope"></i>
         <span>wonjun.choi@snu.ac.kr</span>
       </a>
-      <a href="https://github.com/wonjuncio" target="_blank" rel="noopener" class="about-link">
+      <a href="https://github.com/wonjunchoii" target="_blank" rel="noopener" class="about-link">
         <i class="fab fa-github"></i>
         <span>GitHub</span>
       </a>

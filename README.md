@@ -4,8 +4,8 @@
 
 **내가 보려고 만든 블로그** 📚
 
-[![GitHub](https://img.shields.io/badge/GitHub-wonjuncio-181717?style=flat-square&logo=github)](https://github.com/wonjuncio)
-[![Blog](https://img.shields.io/badge/Blog-Visit-4285F4?style=flat-square&logo=google-chrome&logoColor=white)](https://wonjuncio.github.io)
+[![GitHub](https://img.shields.io/badge/GitHub-wonjunchoii-181717?style=flat-square&logo=github)](https://github.com/wonjunchoii)
+[![Blog](https://img.shields.io/badge/Blog-Visit-4285F4?style=flat-square&logo=google-chrome&logoColor=white)](https://wonjunchoii.github.io)
 
 </div>
 
@@ -76,7 +76,7 @@ bundle exec jekyll serve
 ## 📬 Contact
 
 - **Email**: wonjun.choi@snu.ac.kr
-- **GitHub**: [@wonjuncio](https://github.com/wonjuncio)
+- **GitHub**: [@wonjunchoii](https://github.com/wonjunchoii)
 
 ---
 

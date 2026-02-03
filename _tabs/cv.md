@@ -107,7 +107,7 @@ order: 3
             <a href="/assets/WonjunChoi_MEng_Thesis.pdf" target="_blank" class="project-pdf-link" title="View Thesis PDF">
               <i class="fas fa-file-pdf"></i>
             </a>
-            <a href="https://github.com/wonjuncio/Evo_prediction_ml" target="_blank" class="project-github-link" title="View on GitHub">
+            <a href="https://github.com/wonjunchoii/Evo_prediction_ml" target="_blank" class="project-github-link" title="View on GitHub">
               <i class="fab fa-github"></i>
             </a>
             <span class="project-date">Sep. 2021 – Jul. 2022</span>
@@ -145,7 +145,7 @@ order: 3
             <p class="project-meta">Imperial College London · Modelling Project · First Class (Top Honours)</p>
           </div>
           <div class="project-summary-right">
-            <a href="https://github.com/wonjuncio/catalytic_converter_heatflow" target="_blank" class="project-github-link" title="View on GitHub">
+            <a href="https://github.com/wonjunchoii/catalytic_converter_heatflow" target="_blank" class="project-github-link" title="View on GitHub">
               <i class="fab fa-github"></i>
             </a>
             <span class="project-date">Jan. 2020 – Mar. 2020</span>
@@ -181,7 +181,7 @@ order: 3
             <p class="project-meta">Imperial College London · Modelling Project · First Class (Top Honours)</p>
           </div>
           <div class="project-summary-right">
-            <a href="https://github.com/wonjuncio/alloy_modelling" target="_blank" class="project-github-link" title="View on GitHub">
+            <a href="https://github.com/wonjunchoii/alloy_modelling" target="_blank" class="project-github-link" title="View on GitHub">
               <i class="fab fa-github"></i>
             </a>
             <span class="project-date">Nov. 2019 – Mar. 2020</span>
