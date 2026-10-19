@@ -1,30 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="200.5" version="1.1" width="266.0">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="291.9" version="1.1" width="383.6" viewBox="-4 -4 274 208.5">
   <title>the moment we call augment_twice</title>
+  <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12px; fill: #1f2937; }
+    .name { fill: #f1f5f9; stroke: #475569; stroke-width: 1.25; }
+    .value { fill: #fff7ed; stroke: #ea580c; stroke-width: 1.5; }
+    .list { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.25; }
+    .arrow { fill: none; stroke: #64748b; stroke-width: 1.5; }
+    .arrowend path { fill: #64748b; }
+    marker circle { fill: #475569; }
+    .frame { fill: none; stroke: #94a3b8; stroke-width: 1.25; }
+    .framelabel { fill: #64748b; font-size: 12px; font-style: italic; }
+    .top_code { fill: #0f172a; font-weight: 600; }
+  </style>
   <defs>
     <marker class="arrowend" id="id13" markerHeight="10" markerWidth="10" orient="auto" refX="10" refY="5" viewBox="0,0,10,10">
-      <path d="M 0,0 L 10,5 L 0,10 L 1,5 z" fill="#FFFFFF"></path>
+      <path d="M 0,0 L 10,5 L 0,10 L 1,5 z"></path>
     </marker>
   </defs>
   <g transform="translate(27.0,-4.0)">
-    <polygon class="name" points="57,37.5 115,37.5 120,52.5 115,67.5 57,67.5" fill="#333333" stroke="#FFFFFF"></polygon>
-    <text dy=".3em" text-anchor="middle" x="86.625" y="52.5" fill="#FFFFFF">nums</text>
-    <rect class="list" height="30" width="24" x="165" y="37.5" fill="#000000" stroke="#FFFFFF"></rect>
-    <text dy=".3em" text-anchor="middle" x="177" y="52.5" fill="#FFFFFF">1</text>
-    <rect class="list" height="30" width="24" x="189" y="37.5" fill="#000000" stroke="#FFFFFF"></rect>
-    <text dy=".3em" text-anchor="middle" x="201" y="52.5" fill="#FFFFFF">2</text>
-    <rect class="list" height="30" width="24" x="213" y="37.5" fill="#000000" stroke="#FFFFFF"></rect>
-    <text dy=".3em" text-anchor="middle" x="225" y="52.5" fill="#FFFFFF">3</text>
-    <path class="arrow" d="M 120,52 C 131,52 131,52 142,52 C 153,52 153,52 165,52" fill="none" stroke="#FFFFFF" marker-end="url(#id13)"></path>
-    <rect class="frame" height="120" rx="12" ry="12" width="160" x="-25" y="82.5" fill="none" stroke="#FFFFFF" stroke-dasharray="3,3"></rect>
-    <text class="framelabel" dy=".3em" opacity="1" text-anchor="middle" x="55" y="97.5" fill="#FFFFFF">mutableFunction</text>
-    <polygon class="name" points="56,112.5 115,112.5 120,127.5 115,142.5 56,142.5" fill="#333333" stroke="#FFFFFF"></polygon>
-    <text dy=".3em" text-anchor="middle" x="86.125" y="127.5" fill="#FFFFFF">li</text>
-    <path class="arrow" d="M 120,127 C 140,127 141,118 144,98 C 146,77 147,68 165,57" fill="none" stroke="#FFFFFF" marker-end="url(#id13)"></path>
-    <polygon class="name" points="71,157.5 115,157.5 120,172.5 115,187.5 71,187.5" fill="#333333" stroke="#FFFFFF"></polygon>
-    <text dy=".3em" text-anchor="middle" x="93.625" y="172.5" fill="#FFFFFF">val</text>
-    <circle class="int value" cx="180" cy="172.5" r="15" fill="#000000" stroke="#FFFFFF"></circle>
-    <text dy=".3em" text-anchor="middle" x="180" y="172.5" fill="#FFFFFF">100</text>
-    <path class="arrow" d="M 120,172 C 131,172 131,172 142,172 C 153,172 153,172 165,172" fill="none" stroke="#FFFFFF" marker-end="url(#id13)"></path>
-    <text class="top_code" dy=".3em" text-anchor="middle" x="106" y="15" fill="#FFFFFF">mutableFunction(nums, 100)</text>
+    <polygon class="name" points="57,37.5 115,37.5 120,52.5 115,67.5 57,67.5"></polygon>
+    <text dy=".3em" text-anchor="middle" x="86.625" y="52.5">nums</text>
+    <rect class="list" height="30" width="24" x="165" y="37.5"></rect>
+    <text dy=".3em" text-anchor="middle" x="177" y="52.5">1</text>
+    <rect class="list" height="30" width="24" x="189" y="37.5"></rect>
+    <text dy=".3em" text-anchor="middle" x="201" y="52.5">2</text>
+    <rect class="list" height="30" width="24" x="213" y="37.5"></rect>
+    <text dy=".3em" text-anchor="middle" x="225" y="52.5">3</text>
+    <path class="arrow" d="M 120,52 C 131,52 131,52 142,52 C 153,52 153,52 165,52" fill="none" marker-end="url(#id13)"></path>
+    <rect class="frame" height="120" rx="12" ry="12" width="160" x="-25" y="82.5" fill="none" stroke-dasharray="4,3"></rect>
+    <text class="framelabel" dy=".3em" opacity="1" text-anchor="middle" x="55" y="97.5">mutableFunction</text>
+    <polygon class="name" points="56,112.5 115,112.5 120,127.5 115,142.5 56,142.5"></polygon>
+    <text dy=".3em" text-anchor="middle" x="86.125" y="127.5">li</text>
+    <path class="arrow" d="M 120,127 C 140,127 141,118 144,98 C 146,77 147,68 165,57" fill="none" marker-end="url(#id13)"></path>
+    <polygon class="name" points="71,157.5 115,157.5 120,172.5 115,187.5 71,187.5"></polygon>
+    <text dy=".3em" text-anchor="middle" x="93.625" y="172.5">val</text>
+    <circle class="int value" cx="180" cy="172.5" r="15"></circle>
+    <text dy=".3em" text-anchor="middle" x="180" y="172.5">100</text>
+    <path class="arrow" d="M 120,172 C 131,172 131,172 142,172 C 153,172 153,172 165,172" fill="none" marker-end="url(#id13)"></path>
+    <text class="top_code" dy=".3em" text-anchor="middle" x="106" y="15">mutableFunction(nums, 100)</text>
   </g>
 </svg>
