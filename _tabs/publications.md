@@ -14,13 +14,13 @@ order: 2
         <button class="active" data-filter-btn>All</button>
       </li>
       <li class="filter-item">
-        <button data-filter-btn>International conferences</button>
+        <button data-filter-btn>Journal</button>
       </li>
       <li class="filter-item">
-        <button data-filter-btn>Workshops</button>
+        <button data-filter-btn>Conference</button>
       </li>
       <li class="filter-item">
-        <button data-filter-btn>Pre-prints</button>
+        <button data-filter-btn>Preprint</button>
       </li>
     </ul>
     <!-- Publication cards (auto-generated from _data/publications.yml) -->

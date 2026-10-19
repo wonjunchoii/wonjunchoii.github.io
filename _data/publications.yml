@@ -3,41 +3,18 @@
 # 논문 추가 시 이 파일만 수정하면 됩니다.
 # date 기준 자동 정렬 (최신순)
 #
-# 카테고리: international conferences, workshops, pre-prints
+# 카테고리 (필터 버튼 텍스트와 일치해야 함):
+#   journal    - 저널 게재 확정 논문            venue 예: "npj Comput. Mater. (2027)"
+#   conference - 학회 발표 (poster/oral)        venue 예: "MRS Fall 2026 · Oral"
+#   preprint   - arXiv 등 심사 중인 논문        venue 예: "arXiv preprint · Under review"
+#                (게재 확정 시 category를 journal로, venue를 저널명으로 변경)
 # ---------------------------------------------------------
 
-- title: "Towards a predictive model of low-dose x-ray diffraction image quality"
-  authors: ["alexander wu", "Wonjun Choi", "james parker", "hugh williams"]
+- title: "Defect-limited thermal transport in AlN using pretrained machine-learning interatomic potentials"
+  authors: ["Minseok Moon", "Wonjun Choi", "Seungwu Han", "Youngho Kang"]
   me: 1
-  venue: "Under review"
-  category: "pre-prints"
-  date: 2025-01-01
-  url: "https://arxiv.org/abs/2508.00327"
-  image: "/assets/img/publications/publication_sample.png"
-
-- title: "Conference Paper Title"
-  authors: ["Wonjun Choi", "Co-author Name"]
-  me: 0
-  venue: "Conference Name 2025"
-  category: "international conferences"
-  date: 2025-06-01
-  url: "#"
-  image: "/assets/img/publications/publication_sample.png"
-
-- title: "Workshop Paper Title"
-  authors: ["Wonjun Choi", "Co-author Name"]
-  me: 0
-  venue: "Workshop @ Conference 2025"
-  category: "workshops"
-  date: 2025-05-01
-  url: "#"
-  image: "/assets/img/publications/publication_sample.png"
-
-- title: "Towards a predictive model of low-dose x-ray diffraction image quality"
-  authors: ["James Parker", "Alex Wu", "Wonjun Choi", "Heejong Kim"]
-  me: 2
-  venue: "Conference Name 2026"
-  category: "international conferences"
-  date: 2026-01-01
-  url: "https://arxiv.org/abs/2508.00327"
-  image: "/assets/img/publications/publication_sample.png"
+  venue: "arXiv preprint · Under review"
+  category: "preprint"
+  date: 2026-10-06
+  url: "https://arxiv.org/abs/2610.08013"
+  image: "/assets/img/publications/2026-aln-thermal-transport.webp"
