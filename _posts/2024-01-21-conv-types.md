@@ -41,7 +41,7 @@ Convolution 의 연산량은 \\(CHWK^2N\\)가 되고, 파라미터의 수는 \\(
 <img src="{{page.img_pth}}convlayer.svg">
 *A normal convolutional layer. Yellow blocks represent learned parameters, gray blocks represent feature maps/input images (working memory).*
 
-<img src="{{page.img_pth}}cifar-nin-groupanimation.gif" height="450" width="450">
+<img src="{{page.img_pth}}cifar-nin-groupanimation.webp" height="450" width="450">
 <img src="{{page.img_pth}}colorbar_conv.svg" width="450">
 *The correlations between filters of adjacent layers in a Network-in-Network model trained on CIFAR10, when trained with 1, 2, 4, 8 and 16 filter groups.*
 
@@ -255,7 +255,7 @@ $$
 
 위 그림은 deformable convolution을 시각화한 그림이다. 두가지 단계로 나눌 수 있는데, convolution 연산을 통해(초록색) offset field를 먼저 계산하게 된다. 채널의 개수는 \\(2N (N=\lvert R\rvert)\\)개가 되는데, 하나의 offset마다 2차원 벡터값을 가지고 있기 때문이다. 위 그림에서 convolution 게산을 마친 초록색 offset field의 데이터 하나의 값은 커널 elemet의 개수(\\(N\\))와 차원의 개수(2)의 곱 값의 채널값을 가지게 된다. 계산된 offset(\\(\Delta p_n\\)) 값을 가지고 deformable convolution 연산을 수행하면 된다. 
 
-<img src="{{page.img_pth}}deform_conv_viz.png" width="420">
+<img src="{{page.img_pth}}deform_conv_viz.webp" width="420">
 
 학습시에 deformable convolution 필터와 offset 필터를 동시에 학습할 수 있다는 것이 큰 장점이다. 또한, 기존 모델을 살짝만 바꾸어도 동작이 수월하고, one-stage로 동작하는 방식인 점을 장점으로 꼽았다. 위 그림과 같이 배경과 같은 큰 객체를 탐지할 때에는 receptive field가 넓어지고, 자동차와 같은 사물을 탐지할 때에는 receptive field가 좁아지는 것을 볼 수 있다. Offset이 loss를 최소화 하는 방향으로 학습 가능한 parameter이기 때문에 유연한 receptive field를 사용하여 feature extraction이 더 수월하게 될 수 있다. 일반적으로 object detection이나 segmentatin의 경우 pretraine model을 사용하는 경우가 많기 때문에 마지막 1~3 레이어에 deformable convolution을 적용하여 transfer learning을 진행한다고 한다. 당연히 기존 convolution 연산보다 연산량이 많아진다는 단점이 있지만, 그만큼 성능 향상이 있다고 한다. 
 

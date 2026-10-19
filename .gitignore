@@ -24,3 +24,6 @@ package-lock.json
 
 # Built assets
 assets/js/dist/
+
+# macOS
+.DS_Store

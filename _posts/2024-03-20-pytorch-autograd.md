@@ -89,7 +89,7 @@ ans.backward()
 
 위 코드를 computational node 로 간단하게 표현하면 아래와 같다.
 
-<img src="{{page.img_pth}}Autograd-3.png" width="600">
+<img src="{{page.img_pth}}Autograd-3.webp" width="600">
 
 그림을 보면, 연산을 통해 나온 결과 텐서들은 어떤 연산을 통해 나왔는지 grad_fn(빨간색)에 저장하게 된다. 각 grad_fn은 backward graph에서의 node를 가리키게 된다. 예를 들어 ans 텐서는 `sum_backward`라는 grad_fn을 저장하고 있고, 해당 객체는 backward graph의 다음 node이느 `mul_backward`를 가리키게 된다. 그 다음, e 텐서는 `mul_backward` 객체를 가지고 있고, 해단 객체는 그 다음 스텝인 `mul_backward`와 leaf node에게 미분값을 전달해 주기위한 `accumulate_grad`를 가리키고 있다. `ans.backward()`를 실행하게 되면, 파란색 화살표를 따라 미분값이 전파되게 되는데, `accumulate_grad`를 만나기 전까지 모든 미분 값들을 chain rule을 통해 전파해 주게 된다. 코드 결과와 비교해 보면 다음과 같다. 손계산과 일치하는 것을 볼 수 있다.
 
@@ -114,7 +114,7 @@ ans: tensor([138.], grad_fn=<SumBackward0>)
 #### 두번째 예제
 위 예제와 동일한 코드이지만, e = c.detach() * d 연산을 수행해보자. Detach는 backward에서 어떤 영향을 미치게 될까? Detach는 새로운 텐서 객체로 분리하여 간단하게 텐서를 복사하고, `requires_grad` 속성을 False 로 설정하여 자동 미분 기능에서 제외 시키는 기능을 한다. 해당 텐서의 grad_fn은 None을 가리키고 있게 되어 backward propagation시 미분값이 흐르지 못하도록 한다. 아래 그림을 보면 초록색 박스로 표시 되어있는 부분만 역전파가 이루어지게 되고, c 텐서 이후로는 grad_fn이 None을 가리키고있기 때문에(추상적으로) 그 위로 흐르지 못하는 것을 볼 수 있다. 
 
-<img src="{{page.img_pth}}Autograd-5.png" width="600">
+<img src="{{page.img_pth}}Autograd-5.webp" width="600">
 
 #### 세번째 예제
 비슷한 예제이지만, 실제 linear 네트워크를 예시로 계산해 보자. 
@@ -141,12 +141,12 @@ print(modelA.weight.grad) # 여기서는 tensor([...])
 
 하지만 두번째 계산 시, 연산은 a 텐서를 기점으로 오른쪽으로 흐르게 되고, c.mean().backward()를 통해 modelA가 업데이트가 되기 때문에 실제 gradient가 저장이 되게 되는 것이다. 이후에, optimizer에 업데이트를 원하는 leaf node 텐서들을 넣어주고 (i.e. optim.SGD(parameters, lr=0.01)), optim.step()을 실행하게 되면 전파되어 leaf node에 누적된 미분 값들중 파라미터로 넘겨진 텐서들에 learning rate(0.01)을 곱해주어 업데이트가 진행 되는 것이다.
 
-<img src="{{page.img_pth}}Autograd-7.png" width="600">
+<img src="{{page.img_pth}}Autograd-7.webp" width="600">
 
 ### 번외 - torch.detach()
 `tensor.detach()`메소드는 backpropagation시 위 세번째 예시와 같이 그래프를 떼어 놓는 것과 같은 역할을 한다. 주의할 점은 `tensor.detach()`는 기존 텐서와 메모리 공유를 하며 requires_grad에 False를 해주는 기능이다. 따라서 모든 inplace연산은 기존 텐서에 영향을 줄 수 있으며 완전히 분리된 텐서를 얻기 위해서는 `tensor.clone().detach()`를 사용하면 된다. 
 
-<img src="{{page.img_pth}}detach_clone.png">
+<img src="{{page.img_pth}}detach_clone.webp">
 
 ---
 참고자료

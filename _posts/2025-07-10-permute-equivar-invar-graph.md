@@ -17,7 +17,7 @@ use_math: true
 다음은 노드 3개로 이루어진 간단한 그래프이다.
 
   <div style="margin-right: 20px; text-align: center;">
-        <img src="{{page.img_pth}}small_graph_example.png" width="250">
+        <img src="{{page.img_pth}}small_graph_example.webp" width="250">
     <p style="font-size: 14px;">Graph Example</p>
   </div>
 

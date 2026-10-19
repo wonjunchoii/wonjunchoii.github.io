@@ -85,16 +85,16 @@ $$
 
 <img src="{{page.img_pth}}2dsmokeplumes.png">
 
-<img src="{{page.img_pth}}2dsmokeplumsinterpolate.png">
+<img src="{{page.img_pth}}2dsmokeplumsinterpolate.webp">
 
 아래는 3D smoke cases이다. 인풋 파라미터는 구의 중심 위치(p<sub>x</sub>) 10가지이고, 각 샘플당 660 프레임이므로 총 6600개의 데이터셋을 이용하여 학습된 결과이다. p<sub>x</sub>=0.44 (1st col) 과 0.5 (4th col)의 현상이 매우 다름에도 불구하고 semantic representation 을 성공적으로 수행한 것을 볼 수 있다. 또한, 데이터가 꽤 sparse 함에도 불구하고 좋은 성능을 보여준다.
 
-<img src="{{page.img_pth}}3dsmokecases.png">
+<img src="{{page.img_pth}}3dsmokecases.webp">
 
 ## Discussion
 딥러닝 기반의 방법론이므로 데이터의 품질에 따라 성능이 결정되게 된다. 낮은 주사율, 파라미터 (inlet 위치, 개수 등)에 따라 성능에 차이가 생길 수 있다. (디테일한 부분 구현 불가) 하지만, 장점으로는 특별한 boundary condition 없이 학습/해석이 가능하다는 것이다. 구조물에 침투하는 현상이 아예 없는것은 아니지만, 성능에 영향을 줄만큼의 오차는 생기지 않는다. 아래는 다른 기법과 (Lin. et al) 저자의 기법(CNN)을 비교한 사진이다. 이를 보면 boundary를 성공적으로 모사 할 수 있는 것으로 보인다. 하지만, 복잡한 형상을 가진 구조물에 대한 성능은 미지수이다.
 
-<img src="{{page.img_pth}}deepfluidCompare.png">
+<img src="{{page.img_pth}}deepfluidCompare.webp">
 
 ### Limitation
 아래 그림은 inlet의 위치, 넓이, 시간을 학습된 범위 바깥 range 의 값으로 시뮬레이션을 진행한 결과이다. 10%까지는 어느정도 예측이 정상 범주내에서 이루어지지만 20%이상의 extrapolation은 성능이 저하되는 것을 볼 수 있다.

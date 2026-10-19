@@ -180,10 +180,10 @@ optimizer: !!python/name:torch.optim.adam.Adam ''
 
 | <img src="{{page.img_pth}}vanila_unet_trainloss.png"> | <img src="{{page.img_pth}}valid_dice_unet.png"> |
 
-<img src="{{page.img_pth}}target_mask_unet_project.png">
+<img src="{{page.img_pth}}target_mask_unet_project.webp">
 *Target Mask*
 
-<img src="{{page.img_pth}}predmask_unet.png">
+<img src="{{page.img_pth}}predmask_unet.webp">
 *Predicted Mask*
 
 Metric으로는 `dice`, `f1`, `acc`, `precision`, `recall`, `jaccard`를 사용하여 로깅했다. 하지만 해당 실험의 경우 모든 metric이 좋지 않게 나왔다. 또한 training loss와 validation loss는 학습함에 따라 감소하기는 하지만 이상적으로 감소하지 않으며, loss의 노이즈가 심하다. 정량적인 값들로 예상했듯이 predicted mask를 보면 위치는 대략적으로 캐치해 내지만, 모양이나 클래스는 매우 부정확한것을 볼 수 있다. Train rate를 `1e-4`로 조금 낮추어 학습을 해 보았다. 

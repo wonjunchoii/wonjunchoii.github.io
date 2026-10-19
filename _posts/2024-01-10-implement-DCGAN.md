@@ -136,7 +136,7 @@ Discriminator의 loss가 100으로 수렴하고 Generator의 loss가 0으로 수
 
 이는 너무 깊은 모델로 인해 `gradient vanishing`이나 특정 feature만 학습하여 하나의 mode로 수렴하는 현상인 `mode collapse`현상일 가능성이 있다. 이를 방지하기 위해 문헌에서 쓰이는 채널 개수의 반만 사용하고, `transforms.RandomHorizontalFlip()`을 사용하여 이미지의 다양성을 늘려주었다. 아래는 직접 학습한 1~100 epochs 의 결과이다.
 
-<img src="{{page.img_pth}}dcgan_to_100epochs.gif" width="256">
+<img src="{{page.img_pth}}dcgan_to_100epochs.webp" width="256">
 
 ## Fréchet Inception Distance
 기존에 GAN의 성능을 정량적으로 평가하는 방법은 사람이 눈으로 직접 평가하는 방법밖에 없었다. 사람이 눈으로 보고 판단하는 방법은 한계가 명확하다. 평가하는 사람의 주관이 들어갈 수 밖에 없고, 데이터가 많아질 경우 평가 소요 시간이 많이 늘어나게 된다. 이를 해결하고자 데이터를 정량적으로 평가하는 기법인 Fréchet Inception Distance(FID)가 나오게 된다.
