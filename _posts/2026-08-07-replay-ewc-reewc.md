@@ -1,6 +1,6 @@
 ---
 title: Catastrophic Forgetting과 Replay, EWC, reEWC
-date: 2026-08-14 12:00:00 +0900
+date: 2026-08-07 12:00:00 +0900
 categories: [AI, Deep Learning]
 tags: [continual learning, catastrophic forgetting, fine-tuning, experience replay, ewc, fisher information, reewc, mlip, pytorch, deep learning]
 use_math: true
@@ -456,7 +456,7 @@ Replay의 두 번째 문제였던 "Replay set이 pretrained 데이터를 대표�
 ### 배경: Pretrained MLIP의 PES softening
 
 MLIP는 원자 구조를 입력받아 DFT 수준의 에너지와 힘을 예측하는 모델이다.
-[이전 글](../message-passing-neural-network)에서 정리한 message passing 기반 GNN 구조가 주로 사용되며, MPtrj 같은 대규모 데이터로 학습한 모델을 universal MLIP(uMLIP)라고 부른다.
+[이전 글](../gnn-mlip-to-universal-mlip)에서 정리했듯이 message passing 기반 GNN 구조가 주로 사용되며, MPtrj 같은 대규모 데이터로 학습한 모델을 universal MLIP(uMLIP)라고 부른다.
 
 uMLIP는 놀라운 transferability를 보여주지만, Deng et al.(2025)이 체계적으로 보고한 문제가 하나 있다.
 

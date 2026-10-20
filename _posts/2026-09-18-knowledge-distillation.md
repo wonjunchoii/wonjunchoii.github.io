@@ -1,6 +1,6 @@
 ---
 title: Knowledge Distillation
-date: 2026-10-20 12:00:00 +0900
+date: 2026-09-18 12:00:00 +0900
 categories: [AI, Deep Learning]
 tags: [knowledge distillation, teacher-student, model compression, soft target, temperature, mlip, sevennet, pytorch, deep learning]
 use_math: true
@@ -25,7 +25,7 @@ Anthropic은 증류 자체는 널리 쓰이는 정당한 학습 방법이라고 
 
 모델은 클수록 잘 맞춘다. 하지만 클수록 느리다.
 
-[이전 글](../replay-ewc-reewc)에서 다룬 universal MLIP도 마찬가지이다.
+[이전 글](../gnn-mlip-to-universal-mlip)에서 다룬 universal MLIP도 마찬가지이다.
 수십 개의 데이터셋, 수억 개의 구조로 학습한 foundation model은 분자, 결정, 표면을 가리지 않고 DFT에 가까운 정확도를 보여준다.
 그런데 이런 모델은 parameter 수가 수천만 개에 달하고, 고차 equivariant feature와 깊은 message passing layer를 쓰기 때문에 MD 시뮬레이션이 느리고 메모리도 많이 먹는다.
 수만 개 원자로 나노초 단위의 MD를 돌려야 하는 실제 연구에서는 이 비용이 그대로 병목이 된다.
