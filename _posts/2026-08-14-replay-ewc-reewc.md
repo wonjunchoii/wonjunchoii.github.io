@@ -1,6 +1,6 @@
 ---
 title: Catastrophic Forgetting과 Replay, EWC, reEWC
-date: 2026-10-20 12:00:00 +0900
+date: 2026-08-14 12:00:00 +0900
 categories: [AI, Deep Learning]
 tags: [continual learning, catastrophic forgetting, fine-tuning, experience replay, ewc, fisher information, reewc, mlip, pytorch, deep learning]
 use_math: true
