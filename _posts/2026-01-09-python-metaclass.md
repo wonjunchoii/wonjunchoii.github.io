@@ -396,21 +396,27 @@ print(db1 is db2)  # True
 
 ```python
 class PoolMeta(type):
-    _pool = []
+    _pool = []        # 반납된 객체들
+    _created = 0      # 지금까지 만든 객체 수
     _max_size = 3
 
     def __call__(cls, *args, **kwargs):
-        if cls._pool:
+        if cls._pool:                      # 반납된 객체가 있으면 재사용
             return cls._pool.pop()
-        if len(cls._instances) < cls._max_size:
+        if cls._created < cls._max_size:   # 아직 여유가 있으면 새로 생성
+            cls._created += 1
             return super().__call__(*args, **kwargs)
         raise Exception("Pool exhausted")
+
+    def release(cls, obj):                 # 다 쓴 객체를 풀에 반납
+        cls._pool.append(obj)
 ```
 
 ### 팩토리 패턴 (Factory)
 
 ```python
 class FactoryMeta(type):
+    # cls._registry = {"이름": 서브클래스} 형태로 미리 등록되어 있다고 가정
     def __call__(cls, type_name, *args, **kwargs):
         subclass = cls._registry.get(type_name)
         if subclass:
@@ -422,7 +428,7 @@ class FactoryMeta(type):
 
 | 비교 항목 | `__new__` 오버라이드 | 메타클래스 `__call__` 오버라이드 |
 |----------|---------------------|-------------------------------|
-| 적용 범위 | 해당 클래스만 | 해당 클래스 + 모든 서브클래스 |
+| 적용 범위 | 해당 클래스 + 서브클래스 (상속됨) | 해당 클래스 + 모든 서브클래스 |
 | 객체 반환 제어 | 가능 | 가능 |
 | `__init__` 호출 제어 | 불가능 | 가능 |
 | 코드 분리 | 클래스 내부에 혼재 | 메타클래스로 분리 |
@@ -522,14 +528,14 @@ PyTorch가 메타클래스를 쓰지 않은 이유는 다음과 같다.
 
 ```text
 type.__call__      → 객체 생성 프로토콜
-dataclass          → 클래스 생성 후 수정
+class decorator    → 클래스 생성 후 수정 (예: @dataclass)
 nn.Module.__call__ → 객체 호출 프로토콜
 ```
 
 | 대상 | 제어 레벨 | 사용 이유 |
 |------|----------|----------|
 | `type.__call__` | 클래스 호출 | 객체 생성 규칙 |
-| `dataclass` | 클래스 수정 | 편의성 |
+| class decorator | 클래스 수정 | 편의성 |
 | `nn.Module.__call__` | 인스턴스 호출 | 실행 파이프라인 |
 
 ## 한 문장으로 요약

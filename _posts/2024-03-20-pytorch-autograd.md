@@ -41,7 +41,7 @@ use_math: true
 이처럼 이 경우에 세 비율을 곱하는 것으로 cost의 가중치에 작은 변화에 대한 민감도를 알 수 있다. 위 예시에서 각 비율을 계산하게 되면, 
 
 $$
-    \frac{\partial z^{(L)}}{\partial w^{(L)}} = a^{(L)}
+    \frac{\partial z^{(L)}}{\partial w^{(L)}} = a^{(L-1)}
 $$
 
 

@@ -59,9 +59,9 @@ use_math: true
 
 \\[
 A' = P A P^\top = \begin{bmatrix}
-0 & 0 & 1 \cr
-0 & 0 & 1 \cr
-1 & 1 & 0
+0 & 1 & 0 \cr
+1 & 0 & 1 \cr
+0 & 1 & 0
 \end{bmatrix}
 \\]
 
@@ -83,7 +83,7 @@ A' = P A P^\top = \begin{bmatrix}
 모든 노드의 degree를 더한 값은 순서에 상관없이 항상 같다. 예를 들어,
 
 - 원래 그래프에서 degree 합: 2 + 1 + 1 = 4
-- permuted 그래프에서도 degree 합: 1 + 1 + 2 = 4
+- permuted 그래프에서도 degree 합: 1 + 2 + 1 = 4
 
 즉, degree 합을 계산하는 함수는 permutation invariant하다.
 

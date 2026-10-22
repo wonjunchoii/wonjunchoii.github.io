@@ -40,7 +40,7 @@ $ rbenv hash
 ```
 
 ## Bundler 설치하기
-Bundler가 또 뭐냐... 찾아보니 여러개로 모듈화 된 JS 파일을 말 그대로 'bundle', 즉 합쳐주는 도구라고 한다. 브라우저는 모듈화된 개별 JS 파일을 읽지 못하기 떄문에 부라우저에서 코드를 실행하려면 반드시 필요하다고 한다. 한번 설치를 해보자.
+Bundler가 또 뭐냐... 찾아보니 Ruby 프로젝트에 필요한 gem(Ruby 라이브러리)들과 그 버전을 `Gemfile`에 적어두고 한 번에 설치, 관리해주는 도구라고 한다. Python의 `pip`와 `requirements.txt` 같은 역할이다. Jekyll도 gem으로 설치하기 때문에 필요하다. 한번 설치를 해보자.
 
 ```console
 $ gem install bundler
@@ -57,7 +57,7 @@ $ vim ~/.zshrc
 `~/.zshrc`파일을 열어 아래 두줄을 추가하여 PATH를 설정해주자.
 
 ```console
-export PATH={$Home}/.rbenv/bin:$PATH && \
+export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 ```
 
@@ -96,7 +96,7 @@ Bundler version 2.4.22
 ## node.js 모듈 설치
 처음 설치 할 때 이 부분을 놓쳐 몇시간동안 헤맨적이 있다. node.js 모듈을 설치하지 않으면 `assets/js/dist/*.min.js Not Found`에러가 뜨기 때문에 설치 해주자.
 
-```colsole
+```console
 npm install && npm run build
 ```
 

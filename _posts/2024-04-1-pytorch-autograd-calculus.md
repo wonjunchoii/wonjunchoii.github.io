@@ -105,7 +105,7 @@ $ tensor([0., 2., 4.])
 다른 예제를 보자.
 
 $$
-\textbf{Q} = 3\textbf{a}^2 - \textbf{b}^2
+\textbf{Q} = 3\textbf{a}^3 - \textbf{b}^2
 $$
 
 

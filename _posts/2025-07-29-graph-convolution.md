@@ -27,7 +27,7 @@ Graph Convolutional Network(GCN)의 핵심 아이디어는, CNN의 강력한 지
 * 이웃 노드의 개수가 일정하지 않다
   $\rightarrow$ CNN은 항상 $k \times k$ 커널을 사용하지만, 그래프에서 각 노드는 N 개의 이웃 수를 가진다.
 
-* 노드 순서에 대한 불변성 ([Permutation Invariance](./2025-07-10-permute-equivar-invar-graph.md))
+* 노드 순서에 대한 불변성 ([Permutation Invariance](../permute-equivar-invar-graph))
   $\rightarrow$ 이미지에서는 픽셀 위치가 고정되어 있지만, 그래프에서는 노드 순서가 의미 없으므로,
   이웃 노드들의 순서에 영향을 받지 않는 연산이 필요하다.
 

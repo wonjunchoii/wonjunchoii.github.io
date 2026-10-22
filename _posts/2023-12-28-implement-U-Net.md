@@ -126,11 +126,12 @@ def torch_divmod(dividend:torch.Tensor, divisor:int):
 def collate_fn(batch):
     images, masks = zip(*batch)
 
-    max_height = max(img.size()[1] for img in images)
-    max_width = max(img.size()[0] for img in images)
+    # images: (C, H, W)
+    max_height = max(img.size(-2) for img in images)
+    max_width = max(img.size(-1) for img in images)
 
-    pad_height = max_height - torch.tensor([img.size()[1] for img in images])
-    pad_width = max_width - torch.tensor([img.size()[0] for img in images])
+    pad_height = max_height - torch.tensor([img.size(-2) for img in images])
+    pad_width = max_width - torch.tensor([img.size(-1) for img in images])
 
     h_quotient, h_remainder = torch_divmod(pad_width, 2)
     v_quotient, v_remainder = torch_divmod(pad_height, 2)

@@ -49,6 +49,8 @@ MathJax.Hub.Register.MessageHook("TeX Jax - parse error",function (message) {
 </script>
 ```
 
+> 2026년 수정: `cdn.mathjax.org`는 2017년에 서비스가 종료되어 지금은 동작하지 않는다. 아래 "MathJax 오류" 부분의 MathJax v3 설정을 사용하자.
+
 ### 3. 코드 추가
 2번 과정에서 작성한 코드를 포스트에 적용시켜주기 위해 조건문을 추가해 줘야한다.
 
@@ -104,20 +106,21 @@ $$
 일단 2번 과정에서 작성했었던 `mathjax_support.html` 파일을 지우고, 새로 작성해준다.
 
 ```html
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-      tex2jax: {
-        inlineMath: [ ['$', '$'] ],
-        displayMath: [ ['$$','$$'] ],
-        processEscapes: true,
-        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-      },
-      messageStyle: "none",
-      "HTML-CSS": { preferredFont: "TeX", availableFonts: ["STIX","TeX"] }
-    });
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+  };
 </script>
-<script type="text/javascript" id="MathJax-script" async src="//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 ```
+
+> 2026년 수정: 처음에는 `MathJax.Hub.Config({...})` 형태로 설정을 적었는데, 이건 MathJax v2 문법이라 v3에서는 무시된다. 그래서 한동안 `$...$` 인라인 수식이 렌더링되지 않고 있었다. v3에서는 위처럼 `window.MathJax` 객체로 설정해야 한다.
 
 이렇게 되면 이제 자유롭게 수학 표현식을 사용할 수 있다!

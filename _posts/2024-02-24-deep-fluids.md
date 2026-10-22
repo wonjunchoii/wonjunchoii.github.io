@@ -59,7 +59,7 @@ $$
 <img src="{{page.img_pth}}deepfluidAE.png">
 
 ### Latent Space Integration Network
-Latent Space Integration Network는 시간에 따른 확산을 velocity field states (\(\mathbf{z}\))를 통해 학습하게 된다. 시간에 따른 확산을 LSTM과 같은 모델처럼 시간을 변수로 두어 학습하지 않고, FC 레이어를 사용하여 “manifold navigator”로 사용했다.
+Latent Space Integration Network는 시간에 따른 확산을 velocity field states (\\(\mathbf{z}\\))를 통해 학습하게 된다. 시간에 따른 확산을 LSTM과 같은 모델처럼 시간을 변수로 두어 학습하지 않고, FC 레이어를 사용하여 “manifold navigator”로 사용했다.
 
 $$
 T(\mathbf{x}_t) : \mathbb{R}^{n+k} \to \mathbb{R}^{n-k}
@@ -69,11 +69,11 @@ $$
 \mathbf{x}_t = [\mathbf{c}_t; \Delta \mathbf{p}_t] = [\mathbf{z}_t; \mathbf{p}_t; \Delta \mathbf{p}_t] \in \mathbb{R}^{n+k}
 $$
 
-다음 스텝의 \(\mathbf{z}\), \(\mathbf{z}_{t+1}\),은 아래와 같이 계산된다.
+다음 스텝의 \\(\mathbf{z}\\), \\(\mathbf{z}_{t+1}\\),은 아래와 같이 계산된다.
 $$
 \mathbf{z}_{t+1} = \mathbf{z}_t + T(\mathbf{x}_t)
 $$
-미래의 \(\mathbf{z}\) 값을 사용하여 loss function을 계산하게 된다:
+미래의 \\(\mathbf{z}\\) 값을 사용하여 loss function을 계산하게 된다:
 $$
 L_T(\mathbf{x}_t, \ldots, \mathbf{x}_{t+w-1}) = \frac{1}{w} \sum_{i=t}^{t+w-1} \left\| \Delta \mathbf{z}_i - T_i \right\|_2^2
 $$

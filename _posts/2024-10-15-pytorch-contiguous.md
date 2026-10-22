@@ -44,7 +44,7 @@ tensor([[ 0.,  1.,  2.,  3.],
 
 # contiguous 상태
 for row in a:
-  for element in i:
+  for element in row:
     print(element.data_ptr())
 
 # 주소 뒷자리만 표기 (8byte 간격으로 결과가 잘 나옴을 확인)
@@ -77,7 +77,7 @@ print(ta.is_contiguous()) # False
 
 # non-contiguous 상태
 for row in ta:
-  for element in i:
+  for element in row:
     print(element.data_ptr())
 
 # 4*8byte 간격으로 저장됨 (row는 8byte)
@@ -99,7 +99,7 @@ for row in ta:
 # Contiguous 호출
 cta = ta.contiguous()
 for row in cta:
-  for element in i:
+  for element in row:
     print(element.data_ptr())
 
 # 메모리 정렬 확인 (새로운 메모리에 할당 확인)
@@ -148,15 +148,15 @@ cta.view(12)  # 정상 동작
 ### 5.1 View vs Reshape
 
 - **`view()`**와 **`reshape()`**는 둘 다 텐서의 모양을 바꿔준다.  
-- 하지만, **`view()`**는 입력 텐서가 **contiguous한 경우에만** 동작한다.  
-  - 만약 비연속적인(non-contiguous) 텐서에 대해 `view()`를 호출하면 에러가 발생한다.
-  - 따라서 `view()`는 **입출력 모두 contiguous**한 상태를 보장해야 한다.
+- 하지만, **`view()`**는 데이터를 복사하지 않고 같은 메모리를 다른 모양으로 보는 것이기 때문에, 새로운 모양이 기존 stride와 맞아야만 동작한다.  
+  - 대부분의 비연속적인(non-contiguous) 텐서에서는 이 조건이 맞지 않아 `view()`를 호출하면 에러가 발생한다.
+  - 따라서 `view()`를 쓰기 전에는 보통 `.contiguous()`로 메모리를 다시 정렬해 준다.
 
 - **`reshape()`**는 입력 텐서가 **contiguous 여부와 상관없이** 동작한다.  
-  - 만약 입력 텐서가 contiguous하지 않으면 내부적으로 **`.contiguous()` 복사본을 만든 후 재배열**한다.
-  - 즉, `reshape()`는 항상 **출력 텐서가 contiguous**한 상태를 보장한다.
+  - 가능하면 `view()`처럼 복사 없이 같은 메모리를 공유하는 텐서를 돌려주고, 불가능하면 **복사본을 만든 후 재배열**한다.
+  - 그래서 `reshape()`의 결과가 원본과 메모리를 공유하는지, contiguous한지는 상황에 따라 다르다.
 
-> 정리: `reshape()`는 내부적으로 `input.contiguous().view()`와 비슷한 역할을 한다. 따라서 안전하게 사용할 수 있다.
+> 정리: `reshape()`는 "가능하면 `view()`, 안 되면 복사"하는 역할을 한다. 에러 없이 안전하게 쓸 수 있지만, 원본과 메모리를 공유한다고 가정하면 안 된다.
 
 
 ### 5.2 Transpose vs Permute

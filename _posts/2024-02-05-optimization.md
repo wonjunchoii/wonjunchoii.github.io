@@ -195,11 +195,11 @@ $$
 [Adadelta 논문](https://arxiv.org/abs/1212.5701)
 
 ## RMSprop
-Adagrad와 유사하게, Adadelta에서도 learning rate가 점차 작아지는 문제가 있다. 실제로 Adadelta의 첫 번째 업데이트 식과 동일하다.
+RMSprop은 Adadelta와 마찬가지로 Adagrad에서 learning rate가 점차 작아지는 문제를 해결하기 위해 제안되었다. 지난 gradient 제곱을 모두 더하는 대신 지수 가중 평균을 사용하며, 실제로 Adadelta의 첫 번째 업데이트 식과 동일하다.
 
 $$ E[g^2]_t = 0.9 E[g^2]_{t-1} + 0.1 g^2_t $$
 
-\\[ \theta_{t+1} = \theta_t - \eta \frac{\sqrt{E[g^2]} + \epsilon}{g_t} \\]
+\\[ \theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{E[g^2]_t} + \epsilon} g_t \\]
 
 적절한 \\(\gamma\\) 값으로 0.9를, \\(\eta\\) 값으로 0.001을 제안했다.
 
@@ -218,9 +218,9 @@ Adam(Adaptive Moment estimation)은 [Adagrad](#adagrad), [Adadelta](#adadelta), 
 
 최종적으로 업데이트 식은 다음과 같다:
 
-\\[ \theta_{t+1} = \theta_t - \eta \frac{\sqrt{\hat{v}_t} + \epsilon}{\hat{m}_t} \\]
+\\[ \theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t \\]
 
-논문의 저자는 \\(\beta_1=0.9\\), \\(\beta_2=0.999\\), \\(\epsilon=10^-8\\)을 default 값으로 설정했다.
+논문의 저자는 \\(\beta_1=0.9\\), \\(\beta_2=0.999\\), \\(\epsilon=10^{-8}\\)을 default 값으로 설정했다.
 
 [Adam 문헌](https://arxiv.org/abs/1412.6980)
 
@@ -269,7 +269,7 @@ $$
 여기서, \\( \hat{v_t} \\)는 Adam의 이동 평균 두번째 모멘트 추정치이고, \\( \hat{m_t} \\)은 이동 평균 첫번째 모멘트 추정치이다.이러한 미래의 모멘텀을 사용하는 효과를 적용하면 다음과 같이 공식을 수정할 수 있다:
 
 \\[
-\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\hat{v_t}} + \epsilon}(\beta_1 m_{t} + \frac{(1-\beta_1)g_t}{1-\beta_1^t})
+\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon}\left(\beta_1 \hat{m}_t + \frac{(1-\beta_1)g_t}{1-\beta_1^t}\right)
 \\]
 
 따라서, Nadam은 Adam과 NAG의 아이디어를 결합하여 파라미터를 업데이트하는 과정에서 미래의 모멘텀을 사용하여 최적화의 효율성을 높일 수 있다는 장점이 있다.

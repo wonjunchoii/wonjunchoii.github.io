@@ -94,7 +94,7 @@ Dilated convolution은 기본 convolotion에서 커널 계산에 사용되는 �
 *Transposed conv with kernel size 3, padding 1, stride 2, input_size 3*
 
 ```python 
-torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
+torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
 ```
 첫 transposed convolution을 접했을 때 엄청 헷갈렸었다. 많은 자료에서 해당 기법을 deconvolution이라고 많이 설명하는데, 이는 잘못된 표현이다. Deconvolution처럼 같은 차원의 데이터를 계산한다는 데에는 같지만, 학습을 통해 kernel 값을 찾아가며 연산한다는 점에서 다르다고 볼 수 있다. Transpose convolution은 다음과 같은 순서로 계산할 수 있다.
 
@@ -189,16 +189,16 @@ torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, groups=2)
 
 <img src="{{page.img_pth}}depthwise_conv.png" width="400">
 
-위 그림을 보면 8x8x3 데이터를 3x3x3 커널을 이용해 depthwise convolution을 하는 것을 볼 수 있다. 각 8x8채널별로 3x3 커널을 이용해 convolution 연산을 진행하고, concatenate하는 구조이다. 채널방향의 convolution보다, 공간방향의 convolution으로 이해하면 된다. 여기서 각 커널은 하나의 채널에 대해서만 파라미터를 가지기 때문에 입력과 출려
+위 그림을 보면 8x8x3 데이터를 3x3x3 커널을 이용해 depthwise convolution을 하는 것을 볼 수 있다. 각 8x8채널별로 3x3 커널을 이용해 convolution 연산을 진행하고, concatenate하는 구조이다. 채널방향의 convolution보다, 공간방향의 convolution으로 이해하면 된다.
  
-즉, 각 커널들은 하나의 채널에 대해서만 파라미터를 가진다. 그래서 입력 및 출력 채널의 수가 동일한 것이며 각 채널 고유의 Spatial 정보만을 사용하여 필터를 학습하게 된다. 결과적으로 입력 채널 수 만큼 그룹을 나눈 Grouped Convolution과 같아진다. Grouped Convolution 은 아래에서 설명한다.
+즉, 각 커널들은 하나의 채널에 대해서만 파라미터를 가진다. 그래서 입력 및 출력 채널의 수가 동일한 것이며 각 채널 고유의 Spatial 정보만을 사용하여 필터를 학습하게 된다. 결과적으로 입력 채널 수 만큼 그룹을 나눈 Grouped Convolution과 같아진다. Grouped Convolution은 위에서 설명했다.
 
 ```python
 torch.nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, groups=in_channels)
 ```
 
 ## Depthwise Separable Convolution
-위에서 설명된 Depthwise Convolution과 매우 유사하다. Depthwise convolution 연산을 수행한 뒤, 채널의 출력값을 하나의값으로 합치는 특징을 가지고 있다. 일반적인 depthwise convolution과 달리, spatial feature와 channelwise feature 정보를 모두 고려하여 연산이 가능하지만, 일반 convolution보다 연산량과 parameter의 개수가 적다는 장점이 있다. 아래 코드처럼 추가적인 convolution을 진행하여 하나의 채널로 압축하는 과정을 거쳐 결과를 계산한다.
+위에서 설명된 Depthwise Convolution과 매우 유사하다. Depthwise convolution 연산을 수행한 뒤, 1x1 convolution(pointwise convolution)으로 채널 방향의 정보를 섞어주는 특징을 가지고 있다. 일반적인 depthwise convolution과 달리, spatial feature와 channelwise feature 정보를 모두 고려하여 연산이 가능하지만, 일반 convolution보다 연산량과 parameter의 개수가 적다는 장점이 있다. 아래 코드처럼 depthwise convolution 뒤에 1x1 convolution을 추가해서 원하는 출력 채널 수(out_channels)로 결과를 계산한다.
 
 <img src="{{page.img_pth}}depthwise_separable_conv.png" width="500">
 
