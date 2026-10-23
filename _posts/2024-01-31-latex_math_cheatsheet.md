@@ -1,13 +1,11 @@
 ---
-title: Latex Math Symbols Cheatsheet
-date: 2024-01-31 22:18:00 +0800
+title: LaTeX Math Symbols Cheatsheet
+date: 2024-01-31 22:18:00 +0900
 categories: [Blogging, Math]
-tags: [latex, symbols, math, notation, formulas, guide, cheat sheet, resource]
-
-use_math: true
+tags: [latex, math, cheat sheet]
 ---
 
-# Latex Symbols Cheat Sheet
+## Latex Symbols Cheat Sheet
 
 나중에 볼 math symbol 리스트이다.
 

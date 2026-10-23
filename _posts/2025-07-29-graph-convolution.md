@@ -2,7 +2,7 @@
 title: Graph Convolutional Network
 date: 2025-07-29 11:20:00 +0900
 categories: [AI, Graph]
-tags: [pytorch, mpnn, graph, graph convolution, convolution, matrix operations, deep learning]
+tags: [graph, gnn, gcn, graph convolution, pytorch geometric]
 use_math: true
 ---
 
@@ -148,7 +148,7 @@ $$
 - row 정규화: 평균 
 - symmetric 정규화: 노드 간 influence를 degree 기준으로 균등하게
 
-이 아이디어는, neighboring node feature 의 sum 대신 mean 을 사용하여 위 문제점을 해결하고자 하는 방법이였다. 즉,
+이 아이디어는, neighboring node feature 의 sum 대신 mean 을 사용하여 위 문제점을 해결하고자 하는 방법이었다. 즉,
 
 $$
 \bar{\mathbf{x}}_i = \frac{1}{|\text{Neigh}(i)|} \sum_{j \in \text{Neigh}(i)} \mathbf{x}_j
@@ -162,8 +162,7 @@ $$
 - 작은 degree 노드도 무시되지 않도록 함
 
 <div style="text-align: center;">
-  <img src="{{page.img_pth}}GCN_compare_graph_norm.webp
-" alt="GCN Normalization Comparison" width="700">
+  <img src="{{page.img_pth}}GCN_compare_graph_norm.webp" alt="GCN Normalization Comparison" width="700">
   <p>mean normalization vs. alternative normalization</p>
 </div>
 

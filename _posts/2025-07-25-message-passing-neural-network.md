@@ -2,7 +2,7 @@
 title: Message Passing Neural Network
 date: 2025-07-25 11:20:00 +0900
 categories: [AI, Graph]
-tags: [pytorch, mpnn, graph, matrix operations, deep learning]
+tags: [graph, gnn, mpnn, message passing, pytorch geometric]
 use_math: true
 ---
 
@@ -158,7 +158,7 @@ class MyMPNN(MessagePassing):
 [손계산 비교](https://github.com/Junibuni/mpnn_scratch/blob/master/mpnn_test/mpnn_test.ipynb)
 
 ## 장점
-MPNN 구조의 주요 강점은 그래프의 **구조적 정보**와 **feature**정보를 동시에 포착할 수 있다는 점이다.즉, 특정 노드의 임베딩을 계산할 때 해당 노드는 자신의 k-hop 이웃들로부터 정보를 수집하게 되며, 이를 통해 어떤 노드들과 연결되어 있는지를 반영한 구조적 특성을 포함할 수 있다는게 장점이다. 또한, 이웃 노드들의 feature 값들까지 함께 aggregate 하므로, 단순한 연결 관계뿐만 아니라 노드들이 지닌 실제 feature 도 임베딩에 반영 된다는 장점이 있다.
+MPNN 구조의 주요 강점은 그래프의 **구조적 정보**와 **feature**정보를 동시에 포착할 수 있다는 점이다. 즉, 특정 노드의 임베딩을 계산할 때 해당 노드는 자신의 k-hop 이웃들로부터 정보를 수집하게 되며, 이를 통해 어떤 노드들과 연결되어 있는지를 반영한 구조적 특성을 포함할 수 있다는게 장점이다. 또한, 이웃 노드들의 feature 값들까지 함께 aggregate 하므로, 단순한 연결 관계뿐만 아니라 노드들이 지닌 실제 feature 도 임베딩에 반영 된다는 장점이 있다.
 
 ## 다양한 GNN = MPNN의 특수한 케이스
 

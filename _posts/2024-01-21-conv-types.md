@@ -1,9 +1,8 @@
 ---
 title: Convolution 연산의 종류
-date: 2024-01-21 19:57:00 +0800
+date: 2024-01-21 19:57:00 +0900
 categories: [AI, Deep Learning]
-tags: [convolution, image processing, cnn, deep learning, filtering, feature extraction, matrix convolution, stride, padding, convolution layers, computational efficiency, python]
-
+tags: [convolution, cnn, deep learning, pytorch]
 use_math: true
 ---
 
@@ -26,11 +25,11 @@ Convolution 의 연산량은 \\(CHWK^2N\\)가 되고, 파라미터의 수는 \\(
 넓은 receptive field를 만족시키기 위해서는 커널의 크기를 키우는 방법과 더 깊은(많은) convolutional layer를 쌓는 방법이 있다. 하지만 이 두가지 방법 모두 연산량이 기하급수적으로 증가한다는 단점이 있다.
 
 #### Expensive Cost
-네트워크는 점점 깊어지고, 채널의 수는 증가하게 된다. 이렇게 되면 연산량과 가중치도 비례하여 증가한다. 일반적으로 큰 feature map을 convolution의 입력으로 가져가는 것이 유리하지만, 많은 CNN모델은 computational cost를 고려해서 sup-sampling을 수행한다.
+네트워크는 점점 깊어지고, 채널의 수는 증가하게 된다. 이렇게 되면 연산량과 가중치도 비례하여 증가한다. 일반적으로 큰 feature map을 convolution의 입력으로 가져가는 것이 유리하지만, 많은 CNN모델은 computational cost를 고려해서 sub-sampling을 수행한다.
 
 채널의 수를 늘릴수로 더 다양한 필터를 학습 할 수 있게 된다. 하지만 너무 많은 채널수는 오히려 파라미터 수 증가, 학습 속도 저하, 오버피팅과 같은 문제가 생길 수도 있다.
 
-#### Dead Chanels
+#### Dead Channels
 신경망의 학습 과정에서 출력 결과에 영향을 거의 주지 않는 노드가 나타날 수 있다. 이런 경우, 일반적으로 pruning 을 통해 신경망의 연산량과 파라미터 수를 경량화 할 수 있다.
 
 마찬가지로, CNN에서 이런 현상이 채널 단위에서 일어날 수 있다. 하나의 필터에서, 혹은 전체 신경망 기준으로 불필요한 (학습에 영향을 주지 않는) 채널이 생길 수 있다. 채널의 수는 파라미터 수와 연산량에 직결되기 때문에 엄청난 자원 낭비가 될 수 있다. 채널의 개수는 hyperparmeter 이기 때문에 적당한 채널 개수를 찾는것도 한계가 있다.
@@ -52,7 +51,7 @@ Convolution 의 연산량은 \\(CHWK^2N\\)가 되고, 파라미터의 수는 \\(
 이러한 문제점 때문에 연산량을 최소화 하면서, 정보손실이 일어나지 않도록 다양한 Convolution 기법들이 등장했다. 아래는 다양한 convolution 기법들이다. 설명을 돕기 위해 `PyTorch`코드로 설명을 할 예정이다. 또한 padding, stride와 같은 convolution의 기본 개념은 건너뛰도록 하겠다.
 
 - [Convolution](#convolution)
-- [Dilated Convolutions (atrous Deconvolution)](#dilated-convolution)
+- [Dilated Convolutions (atrous Convolution)](#dilated-convolution)
 - [Transposed Convolution (Deconvolution or fractionally strided convolution)](#transposed-convolution)
 - [Separable Convolution](#separable-convolution)
 - [Pointwise Convolution](#pointwise-convolution)
@@ -83,7 +82,7 @@ torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)
 torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=2)
 ```
 
-Dilated convolution은 기본 convolotion에서 커널 계산에 사용되는 픽셀 간격을 늘린 형태이다. Dilation rate는 커널이 인식하는 픽셀 사이의 간격을 말한다. 3x3 커널에 dilation rate 2를 사용하면 9개의 파라미터를 사용하면서 5x5커널과 동일한 view를 가질 수 있다는 장점이 있다. 이떄문에 real time segmentation 분야에서 자주 쓰이는 기법이다. 커널 연산에 zero padding을 통해 넓은 receptive field를 가질 수 있고, 적은 계산 비용으로 receptive field를 늘릴 수 있는 방법이다.
+Dilated convolution은 기본 convolution에서 커널 계산에 사용되는 픽셀 간격을 늘린 형태이다. Dilation rate는 커널이 인식하는 픽셀 사이의 간격을 말한다. 3x3 커널에 dilation rate 2를 사용하면 9개의 파라미터를 사용하면서 5x5커널과 동일한 view를 가질 수 있다는 장점이 있다. 이떄문에 real time segmentation 분야에서 자주 쓰이는 기법이다. 커널 연산에 zero padding을 통해 넓은 receptive field를 가질 수 있고, 적은 계산 비용으로 receptive field를 늘릴 수 있는 방법이다.
 
 <img src="{{page.img_pth}}atrous_conv.png" width="380">
 
@@ -185,7 +184,7 @@ torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, groups=2)
 ```
 
 ## Depthwise Convolution
-일반적인 convolution 연산은 모든 채널공간에 대해서 계산을 하기 때문에 각 채널에서의 특성(spatial feature)을 추출하기 어렵다는 한계가 있다. Depthwise convolution은 이 한계를 극복하고자 각각의 채널에 대해서만 concolution연산을 진행하는 방식을 택했다. MobileNet과 같은 구조에서 depthwise convolution을 사용하여 연산량을 기하급수적으로 줄여 실시간으로 동작 할 수 있도록 설계하였다. 
+일반적인 convolution 연산은 모든 채널공간에 대해서 계산을 하기 때문에 각 채널에서의 특성(spatial feature)을 추출하기 어렵다는 한계가 있다. Depthwise convolution은 이 한계를 극복하고자 각각의 채널에 대해서만 convolution연산을 진행하는 방식을 택했다. MobileNet과 같은 구조에서 depthwise convolution을 사용하여 연산량을 기하급수적으로 줄여 실시간으로 동작 할 수 있도록 설계하였다. 
 
 <img src="{{page.img_pth}}depthwise_conv.png" width="400">
 
@@ -233,7 +232,7 @@ torch.nn.Conv2d(in_channels, out_channels, kernel_size=1)
 이와 다르게 Deformable convolution은 다음과 같다(위 그림의 b, c, d).
 
 $$
-    \{\Delta p_n:n=1,\ldots,\lvert R\rvert \} \rightarrow \text{offsets augemting} R
+    \{\Delta p_n:n=1,\ldots,\lvert R\rvert \} \rightarrow \text{offsets augmenting} R
 $$
 
 $$
@@ -253,11 +252,11 @@ $$
 
 <img src="{{page.img_pth}}deform_conv2.png" width="420">
 
-위 그림은 deformable convolution을 시각화한 그림이다. 두가지 단계로 나눌 수 있는데, convolution 연산을 통해(초록색) offset field를 먼저 계산하게 된다. 채널의 개수는 \\(2N (N=\lvert R\rvert)\\)개가 되는데, 하나의 offset마다 2차원 벡터값을 가지고 있기 때문이다. 위 그림에서 convolution 게산을 마친 초록색 offset field의 데이터 하나의 값은 커널 elemet의 개수(\\(N\\))와 차원의 개수(2)의 곱 값의 채널값을 가지게 된다. 계산된 offset(\\(\Delta p_n\\)) 값을 가지고 deformable convolution 연산을 수행하면 된다. 
+위 그림은 deformable convolution을 시각화한 그림이다. 두가지 단계로 나눌 수 있는데, convolution 연산을 통해(초록색) offset field를 먼저 계산하게 된다. 채널의 개수는 \\(2N (N=\lvert R\rvert)\\)개가 되는데, 하나의 offset마다 2차원 벡터값을 가지고 있기 때문이다. 위 그림에서 convolution 계산을 마친 초록색 offset field의 데이터 하나의 값은 커널 element의 개수(\\(N\\))와 차원의 개수(2)의 곱 값의 채널값을 가지게 된다. 계산된 offset(\\(\Delta p_n\\)) 값을 가지고 deformable convolution 연산을 수행하면 된다. 
 
 <img src="{{page.img_pth}}deform_conv_viz.webp" width="420">
 
-학습시에 deformable convolution 필터와 offset 필터를 동시에 학습할 수 있다는 것이 큰 장점이다. 또한, 기존 모델을 살짝만 바꾸어도 동작이 수월하고, one-stage로 동작하는 방식인 점을 장점으로 꼽았다. 위 그림과 같이 배경과 같은 큰 객체를 탐지할 때에는 receptive field가 넓어지고, 자동차와 같은 사물을 탐지할 때에는 receptive field가 좁아지는 것을 볼 수 있다. Offset이 loss를 최소화 하는 방향으로 학습 가능한 parameter이기 때문에 유연한 receptive field를 사용하여 feature extraction이 더 수월하게 될 수 있다. 일반적으로 object detection이나 segmentatin의 경우 pretraine model을 사용하는 경우가 많기 때문에 마지막 1~3 레이어에 deformable convolution을 적용하여 transfer learning을 진행한다고 한다. 당연히 기존 convolution 연산보다 연산량이 많아진다는 단점이 있지만, 그만큼 성능 향상이 있다고 한다. 
+학습시에 deformable convolution 필터와 offset 필터를 동시에 학습할 수 있다는 것이 큰 장점이다. 또한, 기존 모델을 살짝만 바꾸어도 동작이 수월하고, one-stage로 동작하는 방식인 점을 장점으로 꼽았다. 위 그림과 같이 배경과 같은 큰 객체를 탐지할 때에는 receptive field가 넓어지고, 자동차와 같은 사물을 탐지할 때에는 receptive field가 좁아지는 것을 볼 수 있다. Offset이 loss를 최소화 하는 방향으로 학습 가능한 parameter이기 때문에 유연한 receptive field를 사용하여 feature extraction이 더 수월하게 될 수 있다. 일반적으로 object detection이나 segmentation의 경우 pretrained model을 사용하는 경우가 많기 때문에 마지막 1~3 레이어에 deformable convolution을 적용하여 transfer learning을 진행한다고 한다. 당연히 기존 convolution 연산보다 연산량이 많아진다는 단점이 있지만, 그만큼 성능 향상이 있다고 한다. 
 
 ---
 참고자료

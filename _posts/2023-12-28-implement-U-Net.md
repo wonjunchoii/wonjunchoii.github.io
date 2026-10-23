@@ -1,23 +1,23 @@
 ---
 title: U-net 구현 - 자동차 파손 인식
-date: 2023-12-28 22:29:00 +0800
+date: 2023-12-28 22:29:00 +0900
 categories: [AI, Segmentation]
-tags: [semantic segmentation, car damage, ai model, computer vision, image processing, deep learning, neural networks, python, pytorch, image segmentation, machine learning, object detection, data preprocessing, model training, computer science]
+tags: [semantic segmentation, u-net, image segmentation, deep learning, pytorch]
 use_math: true
 ---
-# 차량 파손 탐지 모델
+## 차량 파손 탐지 모델
 
-## Objective
+### Objective
 최근 회사 출장 건으로 인해 공유 차량을 빌려 사용할 일이 잦았다. 공유 차량을 빌려 사용할 때, 사용 전 전/측/후면 모두 사진을 찍어 업로드를 해야한다. 이를 이용하여 차량이 파손되었는지 탐지하기 위해 자동화 된 모델을 만들면 좋을 것 같다고 생각되어 탐구해 보기로 했다.
 
-해당 task는 여러 CV 기법 중 segmentatation 기법에 속한다는 것을 알 수 있다. 사진이 주어졌을 때, 파손 부위의 localization도 가능해야 할 뿐더러, 파손의 종류도 classification도 가능해야 하기 때문에 주요 목적은 segmentation으로 볼 수 있다. Segmentation은 instance segmentation과 semantic segmentation으로 분류된다. Instance segmentation은 같은 클래스로 분류 되더라도 다른 instance로 분류되는 반면, semantic segmentation은 같은 클래스 다른 사물 이여도 하나의 object, 즉 하나의 semantic(의미)로 볼 수 있다. 여기서 각 파손 부위별로 나눌 필요는 없고, 파손의 종류만 구별하면 되기 때문에 해당 task의 objective는 `semantic segmentation`으로 볼 수 있다.
+해당 task는 여러 CV 기법 중 segmentation 기법에 속한다는 것을 알 수 있다. 사진이 주어졌을 때, 파손 부위의 localization도 가능해야 할 뿐더러, 파손의 종류도 classification도 가능해야 하기 때문에 주요 목적은 segmentation으로 볼 수 있다. Segmentation은 instance segmentation과 semantic segmentation으로 분류된다. Instance segmentation은 같은 클래스로 분류 되더라도 다른 instance로 분류되는 반면, semantic segmentation은 같은 클래스 다른 사물 이여도 하나의 object, 즉 하나의 semantic(의미)로 볼 수 있다. 여기서 각 파손 부위별로 나눌 필요는 없고, 파손의 종류만 구별하면 되기 때문에 해당 task의 objective는 `semantic segmentation`으로 볼 수 있다.
 
 해당 코드는 [github](https://github.com/Junibuni/Study/tree/master/Unet)에 업로드 해두었다.
 
-## Model selection
-Semantic segmentatinon task에서 널리 쓰이는 상용 모델은 크게 두가지가 있다: U-net과 DeepLabV3+ 모델이 있다. 두 모델을 직접 정량적으로 비교해보지 않아 해당 [문헌](https://www.researchgate.net/publication/349292323_MSU-Net_Multi-Scale_U-Net_for_2D_Medical_Image_Segmentation)에서 정량적으로 비교한 데이터를 참고해 보면, 대부분의 부분에서 U-Net이 미세하게 우수한 성능을 내는 것을 볼 수 있다. 구조적으로도 U-Net이 직관적이기 때문에 U-Net모델을 선택 했다.
+### Model selection
+Semantic segmentation task에서 널리 쓰이는 상용 모델은 크게 두가지가 있다: U-net과 DeepLabV3+ 모델이 있다. 두 모델을 직접 정량적으로 비교해보지 않아 해당 [문헌](https://www.researchgate.net/publication/349292323_MSU-Net_Multi-Scale_U-Net_for_2D_Medical_Image_Segmentation)에서 정량적으로 비교한 데이터를 참고해 보면, 대부분의 부분에서 U-Net이 미세하게 우수한 성능을 내는 것을 볼 수 있다. 구조적으로도 U-Net이 직관적이기 때문에 U-Net모델을 선택 했다.
 
-## Dataset
+### Dataset
 여러 데이터셋을 찾던 중, `roboflow`에서 제공된 [car damage dataset](https://universe.roboflow.com/projet-ai/car-damage-v3)을 선택했다. 다른 데이터셋보다 제공되는 데이터의 양이 많았고(약 2400장), 차의 파손 종류도 함께 분류하고 싶었기 때문에 5개의 class가 있는 해당 데이터셋을 선택했다. 5가지의 class는 다음과 같다.
 
 - Dent
@@ -79,7 +79,7 @@ Semantic segmentatinon task에서 널리 쓰이는 상용 모델은 크게 두�
 
 - Annotations: Image ID, 여러개의 object ID , bbox, segmentation 등 이미지의 상세 정보
 
-### Data Pre-processing
+#### Data Pre-processing
 Coco 데이터셋은 train(70%), valid(20%) 그리고 test(10%)으로 나눠져 있다. Coco dataset을 쉽게 조작 할 수 있는 `pycocotools`를 사용하여 id, annotations, masks등 불러오는 기능을 구현해 테스트 해보았다.
 
 | ![]({{page.img_pth}}img_with_mask.png) | ![]({{page.img_pth}}only_mask.png) |
@@ -104,7 +104,7 @@ Background의 비중은 약 82%를 차지하고, 나머지는 각각 6%, 3%, 2%,
 
 위 식을 보면 \\(\gamma = 0\\)일 때 `Cross Entropy Loss`와 같아짐을 알 수 있고, \\(\gamma\\)가 커질수록 easy example에 대한 loss가 줄어듦을 알 수 있다. 잘못 분류되어 \\(p_t\\)가 작아지게 되면, 가중치 (focusing parameter)가 1에 가까워지게 되고, \\(\text{log}(p_t)\\)가 커지게 되어 loss가 커지게 된다. 반대로 \\(p_t\\)가 올바를 예측을 할 경우 1에 가까워지게 되며, focusing parameter가 0에 가깝게 되고 \\(\text{log}(p_t)\\) 값은 줄어들게 된다. 따라서 앞의 focusing parameter는 easy example에 대한 loss 비중을 낮추는 역할을 함을 알 수 있다. 요약하자면, focal loss는 잘맞추는 클래스는 비교적 신경쓰지 않도록 하고 잘못 맞추는 케이스에 대해서 학습을 중점적으로 진행한다. 
 
-### DataLoader
+#### DataLoader
 Coco 커스텀 데이터를 이용하기 때문에, 데이터로더를 만들어야한다. `pycocotools`를 사용하여 annotation, Id, image를 읽어와 데이터를 불러오는 모듈을 구현했다. 이때, train set에 대해서 mean과 std를 구하여 데이터를 normalize처리를 해 주었다. Train set의 RGB 채널에 대한 mean 과 std는 [0.5735, 0.5618, 0.5681], [0.2341, 0.2348, 0.2343]로 계산되었다. Mask의 경우, 클래스 개수만큼 one-hot encoded 채널을 만들지 않고, 클래스 인덱스를 이용해 하나의 채널로 만들어주었다. `poly_to_mask`의 코드는 아래와 같이 작성했다.
 
 ```python
@@ -115,7 +115,7 @@ def poly_to_mask(self, img_info, anns, merge=True):
         return torch.tensor(anns_img, dtype=torch.int64)
 ```
 
-배치 단위로 묶이는 사진들을 모두 같은 크기로 만들어주어야 배치크기의 텐서로 만들 수 있다. 이미지 크기가 다르다면 하나의 텐서로 묶일 수 없기 때문에 두가지 방법을 고안해냈다. 첫번째로, image와 mask 모두 배치 단위에서 하나의 사이즈로 resize 하는 것이다. 가장 간편한 방법이지만, resize를 함으로서 segmentaion polygon이 담고 있는 정보의 손실이 생기기 때문에 해당 방법을 사용하지 않았다. 두번째 방법으로는, 배치단위에서 가장 큰 이미지의 사이즈를 추출한 뒤, 나머지 데이터를 사이즈에 맞게 padding 해주는 것이다. 모든 segmentation의 해상도(정보)를 잃지 않으며 배치 단위로 사이즈를 통일화 시켜줄 수 있어, 해당 방법을 선택했다. 구현한 코드는 아래와 같다. 
+배치 단위로 묶이는 사진들을 모두 같은 크기로 만들어주어야 배치크기의 텐서로 만들 수 있다. 이미지 크기가 다르다면 하나의 텐서로 묶일 수 없기 때문에 두가지 방법을 고안해냈다. 첫번째로, image와 mask 모두 배치 단위에서 하나의 사이즈로 resize 하는 것이다. 가장 간편한 방법이지만, resize를 함으로서 segmentation polygon이 담고 있는 정보의 손실이 생기기 때문에 해당 방법을 사용하지 않았다. 두번째 방법으로는, 배치단위에서 가장 큰 이미지의 사이즈를 추출한 뒤, 나머지 데이터를 사이즈에 맞게 padding 해주는 것이다. 모든 segmentation의 해상도(정보)를 잃지 않으며 배치 단위로 사이즈를 통일화 시켜줄 수 있어, 해당 방법을 선택했다. 구현한 코드는 아래와 같다. 
 
 ```python
 def torch_divmod(dividend:torch.Tensor, divisor:int):
@@ -156,12 +156,12 @@ def collate_fn(batch):
     return torch.stack(padded_images), torch.stack(padded_masks)
 ```
 
-데이터 로더 작성 후, pytorch lighting의 `LightningDataModule`로 감싸주었다.
+데이터 로더 작성 후, pytorch lightning의 `LightningDataModule`로 감싸주었다.
 
-## Implementation / Result
+### Implementation / Result
 자동차 파손 부위 예측이라는 task를 하기 위해 Unet 기반 다양한 backbone을 사용하여 결과를 비교해 보았다.
 
-### Unet
+#### Unet
 우선, vanila Unet으로 모델을 구현하여 테스트 해 보았다. 모델은 64, 128, 256, 512, 1024 채널을 가지는 contracting path를 가지고 있고, 반대로 올라오는 expanding path를 가지고 있다. 각 모듈마다 skip connection을 이용하여 contracting과 expanding path를 연결해 주었다. Pretrain 되어있지 않은 모델이라 learning rate를 처음엔 조금 크게 사용하였다. 아래는 `lr=1e-3`, `cross_entropy`, `Adam`을 사용한 결과이다.
 
 ```yaml
@@ -187,7 +187,7 @@ optimizer: !!python/name:torch.optim.adam.Adam ''
 <img src="{{page.img_pth}}predmask_unet.webp">
 *Predicted Mask*
 
-Metric으로는 `dice`, `f1`, `acc`, `precision`, `recall`, `jaccard`를 사용하여 로깅했다. 하지만 해당 실험의 경우 모든 metric이 좋지 않게 나왔다. 또한 training loss와 validation loss는 학습함에 따라 감소하기는 하지만 이상적으로 감소하지 않으며, loss의 노이즈가 심하다. 정량적인 값들로 예상했듯이 predicted mask를 보면 위치는 대략적으로 캐치해 내지만, 모양이나 클래스는 매우 부정확한것을 볼 수 있다. Train rate를 `1e-4`로 조금 낮추어 학습을 해 보았다. 
+Metric으로는 `dice`, `f1`, `acc`, `precision`, `recall`, `jaccard`를 사용하여 로깅했다. 하지만 해당 실험의 경우 모든 metric이 좋지 않게 나왔다. 또한 training loss와 validation loss는 학습함에 따라 감소하기는 하지만 이상적으로 감소하지 않으며, loss의 노이즈가 심하다. 정량적인 값들로 예상했듯이 predicted mask를 보면 위치는 대략적으로 캐치해 내지만, 모양이나 클래스는 매우 부정확한것을 볼 수 있다. Learning rate를 `1e-4`로 조금 낮추어 학습을 해 보았다. 
 
 <img src="{{page.img_pth}}unet_losse-4_trainloss.png" width="480">
 
@@ -195,9 +195,9 @@ Metric으로는 `dice`, `f1`, `acc`, `precision`, `recall`, `jaccard`를 사용�
 
 <img src="{{page.img_pth}}compareallunetloss.png" width="480">
 
-스케쥴러를 사용한 뒤의 결과가 크게 다르지 않았다. Vanila Unet은 기존 문헌에서 흑백채널의 이미지에 대한 실험이였고, 세포의 테두리를 탐지하는 비교적 간단한 테스크였다. 하지만 해당 데이터는 RGB 차원을 가지는 이미지에 대한 테스크이며, mask의 모양도 비교적 복잡하기 때문에 vanila unet의 레이어가 너무 얕거나 피쳐맵의 채널수가 부족하다고 느꼈다. 이 실험에서 validation Loss 자체가 감소하지 않는 현상의 문제보다 train loss의 진동이 심하고 predicted mask의 성능이 좋지 않아 pretrained된 `vgg19`, `resnet50`, `efficientnetb0` backbone을 사용하여 학습을 해보았다. 깊은 레이어를 가진 구조이기도 하며, 더욱 더 세부적인 피처를 추출할 수 있기 때문에 위 모델을 선택했다.
+스케쥴러를 사용한 뒤의 결과가 크게 다르지 않았다. Vanilla Unet은 기존 문헌에서 흑백채널의 이미지에 대한 실험이였고, 세포의 테두리를 탐지하는 비교적 간단한 테스크였다. 하지만 해당 데이터는 RGB 차원을 가지는 이미지에 대한 테스크이며, mask의 모양도 비교적 복잡하기 때문에 vanila unet의 레이어가 너무 얕거나 피쳐맵의 채널수가 부족하다고 느꼈다. 이 실험에서 validation Loss 자체가 감소하지 않는 현상의 문제보다 train loss의 진동이 심하고 predicted mask의 성능이 좋지 않아 pretrained된 `vgg19`, `resnet50`, `efficientnetb0` backbone을 사용하여 학습을 해보았다. 깊은 레이어를 가진 구조이기도 하며, 더욱 더 세부적인 피처를 추출할 수 있기 때문에 위 모델을 선택했다.
 
-### VGG vs Resnet vs Efficientnet
+#### VGG vs Resnet vs Efficientnet
 `vgg19`, `resnet50`, `efficientnetb0` 세가지 모델 모두 convolutional layer를 사용하여 feature extraction을 한다는 특징이 있다. 이 과정에서 인풋 영상의 크기가 반으로 줄어드는 레이어가 있는데, 이를 이용하여 Unet의 backbone으로 사용이 가능하다. 아래는 `torchvision.models`에서 데이터의 크기가 반으로 줄어드는 레이어를 추출하기 위해 저장한 dictionary이다. 예를 들어 `efficientnetb0`모델은 `features.1`, `features.2`, `features.3`, `features.5`, `features.7` 레이어에서 데이터의 사이즈가 반으로 줄어들고, 각 레이어는 `features.7`레이어 부터 [320, 112, 40, 24, 16]채널을 가지게 된다(reversed).
 
 ```python
@@ -250,11 +250,11 @@ def extract_features(model, input_tensor, layer_names):
 
 일단 정량적으로 비교해보면 결과는 아래와 같다. 왼쪽 위부터 오른쪽 아래까지 `UNet`, `VGG19`, `ResNet50`, `EfficientNetb0`모델의 학습 결과이다.
 
-### Resnet with FocalLoss
+#### Resnet with FocalLoss
 
 세 가지 손실 함수(Cross-Entropy(CE), Mean Intersection over Union(mIoU), Focal Loss)를 비교하는 이유는 각 손실 함수가 다른 데이터 분포나 문제에 대한 특성을 잘 반영하기 때문이다. 특히, 불균형한 클래스 분포를 다루는 상황에서 어떤 손실 함수가 더 적합한지 파악하는 것이 중요하다.
 
-#### 1. Cross-Entropy Loss (CE)
+##### 1. Cross-Entropy Loss (CE)
 CE는 분류 문제에서 가장 흔히 사용되는 손실 함수로, 예측된 확률과 실제 레이블 간의 차이를 계산한다. 하지만 CE는 **잘못 예측한 샘플에 대해 더 가혹한**(harsh) 경향이 있습니다. 이 말은 잘못된 예측에 대해 큰 손실 값을 주어, 모델이 빠르게 학습할 수 있도록 도와주지만, 불균형한 클래스 분포에서는 과소 표현된 클래스에 대해 충분한 학습이 어려울 수 있다.
 
 **장점**:
@@ -265,7 +265,7 @@ CE는 분류 문제에서 가장 흔히 사용되는 손실 함수로, 예측된
 - 클래스 불균형 데이터에서 과소 표현된 클래스에 대한 성능 저하
 - 손실이 낮은 샘플(정확하게 예측된 샘플)과 높은 손실(잘못 예측된 샘플) 사이의 균형이 부족함
 
-#### 2. Mean Intersection over Union (mIoU)
+##### 2. Mean Intersection over Union (mIoU)
 mIoU는 주로 **세그멘테이션 작업에서 성능을 평가**하는 데 사용되며, 각 클래스에 대해 예측된 영역과 실제 영역 간의 겹치는 부분을 측정하는 방식이다. 이는 픽셀 기반 분류에서 직관적인 성능 지표로, 모델이 예측한 마스크와 실제 마스크가 얼마나 일치하는지를 보여준다.
 
 **장점**:
@@ -276,7 +276,7 @@ mIoU는 주로 **세그멘테이션 작업에서 성능을 평가**하는 데 �
 - 손실 함수가 아닌 평가 지표로 주로 사용됨
 - 클래스 불균형 문제를 해결하기엔 부족함
 
-#### 3. Focal Loss
+##### 3. Focal Loss
 Focal Loss는 **클래스 불균형 문제**를 해결하기 위해 고안된 손실 함수로, 특히 **잘못 예측한 샘플에 더 집중**한다. CE와 달리, 정확하게 예측된 샘플에 대한 손실 값을 줄이고, **어려운 샘플에 더 큰 가중치**를 부여해 모델이 과소 표현된 클래스에서도 더 잘 학습하도록 돕는다. 이는 특히, 작은 물체를 탐지하거나 데이터셋에서 특정 클래스가 적게 나타나는 경우에 유리하다.
 
 **장점**:
@@ -287,28 +287,28 @@ Focal Loss는 **클래스 불균형 문제**를 해결하기 위해 고안된 �
 - 모든 데이터셋에 효과적이지 않을 수 있으며, 하이퍼파라미터(감마)의 조정이 필요함
 - 잘못된 예측에 지나치게 집중하면 오버피팅될 수 있음
 
-#### Focal Loss 선택 이유
+##### Focal Loss 선택 이유
 세그멘테이션 문제에서 각 손실 함수를 비교하는 이유는, 데이터셋 내 클래스의 불균형 문제가 크기 때문이다. CE는 모든 클래스에 동일한 가중치를 부여하지만, 불균형한 데이터에서는 주요 클래스에만 집중하게 되는 경향이 있다. 반면, Focal Loss는 소수 클래스나 어려운 샘플에 가중치를 주어 모델이 이러한 샘플에 더 신경을 쓰도록 유도한다. 이를 통해 클래스 불균형 문제를 해결하고 모델의 전반적인 성능을 향상시킬 수 있다.
 
 데이터셋의 클래스 분포를 추출해 보면, 특정 클래스가 적게 나타나는 것이 확인될 수 있으며, 이를 해결하기 위해 Focal Loss와 같은 손실 함수가 적합한 선택이 될 수 있다.
 
-## Backbone + Focal Loss 실험
+### Backbone + Focal Loss 실험
 
 차량 손상 감지와 같은 세그멘테이션 작업에서는 **RGB 이미지**와 같은 다양한 입력 데이터와 복잡한 형상을 다뤄야 하기 때문에 신중한 아키텍처 선택이 필요하다. Vanilla U-Net을 사용해 실험한 결과, 해당 모델이 복잡한 특징을 충분히 추출하지 못한다는 한계를 경험했고, 이를 보완하기 위해 **VGG19**, **ResNet50**, **EfficientNetB0**와 같은 더 깊은 백본(backbone)을 도입했다.
 
-### Why Deeper Backbones?
+#### Why Deeper Backbones?
 Vanilla U-Net의 얕은 계층과 제한된 특징 맵(depth) 때문에 복잡한 세그멘테이션 작업에 필요한 디테일한 특징을 잘 포착하지 못했다. 이런 한계를 극복하기 위해 **VGG19**, **ResNet50**, **EfficientNetB0** 백본을 실험했다. 이 모델들은 깊은 네트워크 구조와 계층적 특징 추출 능력 덕분에 더 복잡한 세그멘테이션 작업에서 성능을 발휘할 수 있다.
 
-#### VGG19
+##### VGG19
 VGG19는 19개 계층으로 구성된 심층 신경망이다. 주로 3x3 합성곱 레이어를 쌓아 복잡한 패턴을 처리하며, 상대적으로 단순한 구조를 갖고 있지만 이미지 분류 작업에서 우수한 성능을 보여준다. 이 때문에 차량 손상과 같은 작업에서도 효과적인 성능을 기대하며 실험에 포함했다.
 
-#### ResNet50
+##### ResNet50
 ResNet50은 Residual Connections을 통해 깊은 네트워크에서도 Gradient Vanishing 문제를 완화한다. 총 50개의 계층으로 구성된 이 모델은 흠집이나 찌그러짐 같은 미세한 차량 손상까지 포착할 수 있는 계층적 표현을 학습할 수 있다. 잔차 블록을 활용한 ResNet50은 더 깊은 네트워크에서도 학습이 안정적이라는 점에서 적합한 선택이었다.
 
-#### EfficientNetB0
+##### EfficientNetB0
 EfficientNetB0는 Compound Scaling과 Depth-wise Separable Convolutions을 사용해 모델의 복잡도와 성능을 최적화한다. 이 모델은 계산 효율성을 유지하면서도 높은 정확도를 제공하기 때문에, 차량 손상 감지와 같은 작업에서 성능과 속도의 균형을 맞출 수 있다.
 
-### 결과 및 분석
+#### 결과 및 분석
 
 여러 백본을 **U-Net**에 통합한 후, 여러 지표(Dice, F1, Precision, Recall, Jaccard Index)를 기준으로 모델을 비교했다.
 
@@ -320,7 +320,7 @@ EfficientNetB0는 Compound Scaling과 Depth-wise Separable Convolutions을 사�
 
 세 가지 모델 중 **EfficientNetB0**가 가장 우수한 성능을 보였다. 이 모델은 Precision과 Recall 측면에서 특히 뛰어난 성능을 보였으며, 이는 차량의 미세한 손상을 감지하는 데 중요한 요소다. EfficientNetB0는 더 복잡한 ResNet50과 VGG19에 비해 계산 효율성까지 겸비해 실시간 손상 감지 작업에 적합한 모델로 평가되었다.
 
-### 결론
+#### 결론
 
 VGG19, ResNet50, EfficientNetB0와 같은 백본을 실험하면서, 차량 손상 세그멘테이션 작업에 U-Net을 최적화하는 방법에 대한 중요한 인사이트를 얻을 수 있었다. 더 깊고, 사전 학습된 백본을 사용하면 더 깊은 계층적 특징을 학습하는 데 유리하며, 복잡한 패턴을 다루는 작업에서 성능을 크게 향상할 수 있다는 것을 확인했다. 특히 **EfficientNetB0**는 속도와 정확성의 균형이 우수하여 실시간 손상 감지에 가장 적합한 모델로 입증되었다.
 

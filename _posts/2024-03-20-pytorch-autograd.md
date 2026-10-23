@@ -1,16 +1,15 @@
 ---
-title: Pytorch의 Autograd Engine
-date: 2024-03-20 13:37:00 +0800
-categories: [AI, Pytorch]
-tags: [pytorch, autograd, deep learning, machine learning, neural networks, gradient descent, backpropagation, computational graphs, pytorch tutorial]
-
+title: PyTorch의 Autograd Engine
+date: 2024-03-20 13:37:00 +0900
+categories: [AI, PyTorch]
+tags: [pytorch, autograd, backpropagation, computational graph]
 use_math: true
 ---
 
 ## AutoGrad
 
 ### Backpropagation
-딥러닝은 input값과 output값을 비교하며 둘의 차이만큼 연산식(parameter)를 수정해 나가는 과정이다. 이를 가능하게 하기 위해서 각 paremeter가 loss function에 얼마나 민감하게 반응하는지 역으로 계산하여 업데이트 해주게 된다. 
+딥러닝은 input값과 output값을 비교하며 둘의 차이만큼 연산식(parameter)를 수정해 나가는 과정이다. 이를 가능하게 하기 위해서 각 parameter가 loss function에 얼마나 민감하게 반응하는지 역으로 계산하여 업데이트 해주게 된다. 
 
 <img src="{{page.img_pth}}autograd_node.svg">
 
@@ -91,7 +90,7 @@ ans.backward()
 
 <img src="{{page.img_pth}}Autograd-3.webp" width="600">
 
-그림을 보면, 연산을 통해 나온 결과 텐서들은 어떤 연산을 통해 나왔는지 grad_fn(빨간색)에 저장하게 된다. 각 grad_fn은 backward graph에서의 node를 가리키게 된다. 예를 들어 ans 텐서는 `sum_backward`라는 grad_fn을 저장하고 있고, 해당 객체는 backward graph의 다음 node이느 `mul_backward`를 가리키게 된다. 그 다음, e 텐서는 `mul_backward` 객체를 가지고 있고, 해단 객체는 그 다음 스텝인 `mul_backward`와 leaf node에게 미분값을 전달해 주기위한 `accumulate_grad`를 가리키고 있다. `ans.backward()`를 실행하게 되면, 파란색 화살표를 따라 미분값이 전파되게 되는데, `accumulate_grad`를 만나기 전까지 모든 미분 값들을 chain rule을 통해 전파해 주게 된다. 코드 결과와 비교해 보면 다음과 같다. 손계산과 일치하는 것을 볼 수 있다.
+그림을 보면, 연산을 통해 나온 결과 텐서들은 어떤 연산을 통해 나왔는지 grad_fn(빨간색)에 저장하게 된다. 각 grad_fn은 backward graph에서의 node를 가리키게 된다. 예를 들어 ans 텐서는 `sum_backward`라는 grad_fn을 저장하고 있고, 해당 객체는 backward graph의 다음 node인 `mul_backward`를 가리키게 된다. 그 다음, e 텐서는 `mul_backward` 객체를 가지고 있고, 해당 객체는 그 다음 스텝인 `mul_backward`와 leaf node에게 미분값을 전달해 주기위한 `accumulate_grad`를 가리키고 있다. `ans.backward()`를 실행하게 되면, 파란색 화살표를 따라 미분값이 전파되게 되는데, `accumulate_grad`를 만나기 전까지 모든 미분 값들을 chain rule을 통해 전파해 주게 된다. 코드 결과와 비교해 보면 다음과 같다. 손계산과 일치하는 것을 볼 수 있다.
 
 ```console
 backward() 전

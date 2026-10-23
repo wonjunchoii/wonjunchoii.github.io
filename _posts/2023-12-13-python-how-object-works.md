@@ -1,23 +1,22 @@
 ---
 title: Python의 변수는 어떻게 관리되는가?
-date: 2023-12-13 20:29:00 +0800
+date: 2023-12-13 20:29:00 +0900
 categories: [Language, Python]
-tags: [python, variables, objects, object-oriented programming, memory management, variable formation, programming language, object model, dynamic typing, programming basics]
-use_math: true
+tags: [python, object model, memory management, mutable, immutable]
 img_pth: /assets/img/post/pyob/
 ---
-# Python
+## Python
 다른 언어들은 변수를 선언할 때 타입을 함께 명시해 준다. 하지만 파이썬은 변수 타입과 메모리 할당을 따로 해주지 않아도 된다는 점에서 코딩 입문자가 접하기 쉬운 언어인 것 같다. 하지만 파이썬은 다른 언어와 어떻게 차이가 있길래 변수 선언 방식이 다른걸까?
 
 해당 주제는 Ned Batchelder의 [PyCon 2015 발표](https://youtube.com/watch?v=_AEJHKGk9ns)를 참고하여 작성했다. Ned의 설명이 너무 깔끔해서 내용을 정리하고자 작성한다.
 
-## Names and Values
+### Names and Values
 Python에서는 `name is a reference to a value`라고 한다. 이게 무슨 뜻이냐 하면,
 
 ```python
 x = 23
 ```
-의 경우 변수 `x`가 `23`을 refer 한다고 한다. 나중에 이 x의 값을 아용하게 되면,
+의 경우 변수 `x`가 `23`을 refer 한다고 한다. 나중에 이 x의 값을 이용하게 되면,
 
 ```python
 print(x + 2)      #25
@@ -27,7 +26,7 @@ print(x + 2)      #25
 
 <img src="{{page.img_pth}}pyob1.svg">
 
-이 과정을 Python에서는 `assignmnet`라고 한다. Assignment는 하나의 값에 대해서 여러번 다른 이름으로 수행 될 수 있다.
+이 과정을 Python에서는 `assignment`라고 한다. Assignment는 하나의 값에 대해서 여러번 다른 이름으로 수행 될 수 있다.
 
 ```python
 x = 23
@@ -48,7 +47,7 @@ x = 12
 
 Python에서의 값은 자신을 가리키고 있는 화살표, 즉 이름이 없을 때 메모리 해제를 시켜준다. 이를 garbage collection이라고 한다. Reference counting의 수가 0이 될 때, 더이상 쓰이지 않는 값이라고 판단하여 값을 메모리에서 지워주게 되는데, 나중에 자세하게 gc에 대해 다뤄보도록 하겠다.
 
-## Assignment
+### Assignment
 Python에서 값을 이름에 assign 해줄 때, 값은 복사되지 않고, 새로운 값은 절대로 만들어 지지 않는다. 방금 전 예시를 보면 x와 y, 두 변수가 생성된 것처럼 보이지만, `y = x`를 해주었을 때 값은 하나고, 이름표가 두개 만들어 진 것이다. 일반 정수형 말고 리스트와 같이 복잡한 데이터를 보자.
 
 ```python
@@ -93,7 +92,7 @@ print(tri)      # [1, 2, 3, 4]
 
 분명 nums를 조작했지만, nums와 tri는 같은 데이터 (이 경우 list)를 가리키고 있기 때문에 tri의 출력 값도 변하게 되는 것이다! 해당 기능은 버그가 아니기 때문에 python을 사용할 때 생각하면서 사용해야 한다.
 
-## Diversity
+### Diversity
 Python에서의 list, dictionary와 같은 객체 안에 들어있는 정보도 모두 `reference`다. 따라서 전에 그렸었던 그림을 다음과 같이 해석할 수 있다.
 
 <img src="{{page.img_pth}}pyob8.svg">
@@ -205,7 +204,7 @@ print(nums)     #[1, 2, 3, 100]
 
 사실 사용법에 있어 정답은 없다. Python의 작동방식을 이해하고, 상황에 알맞은 기능을 쓰는것이 바람직하다고 생각한다.
 
-## Dynamic Typing
+### Dynamic Typing
 Python은 dynamic typing을 지원하며, 이 뜻은 이름에는 타입이 없다는 뜻이다. 이름은 모든 타입을 지원하며, 하나의 이름은 int, str, func, module 모두 refer가 가능하다. 당연히 하나의 변수가 코드 내에서 여러가지 타입을 사용한다면 코드의 가독성이 떨어지거나 오류가 날 가능성이 높아지지만, 파이썬은 이런 작업이 가능하다.
 
 Python에서의 `name`은 type이 없고, `value`는 scope가 없다는 것이 중요하다. 함수 안의 변수는 local variable 이라고 하고, 여기서 우리는 해당 변수가 함수에 scoped 되었다고 한다. 이 변수는 함수 밖에서는 사용이 되지 않고, 함수 밖으로 나오면 해당 변수는 삭제되는 것이다. 하지만 파이썬에서는 함수 내의 name이 가리키는 변수가 다른 name에 의해서 참조 되고 있다면, 변수는 삭제되지 않을 것이다. Local 변수 자체가 삭제 되는 것이 아닌, local name이 삭제 되는 것이다.
@@ -216,9 +215,9 @@ del nums
 ```
 여태까지 변수를 삭제하는 개념으로 `del` 명령어를 사용하고 있었지만, `del`은 사실 name을 삭제하는 것이였다! 만약 `del`을 사용하여 값의 reference count가 0이 되는 경우, 변수가 gc에 의해 삭제 될 것이다.
 
-## More Examples
+### More Examples
 ---
-### 덧셈 연산자(+)와 증감 연산자(+=)
+#### 덧셈 연산자(+)와 증감 연산자(+=)
 ```python
 nums1 = [1, 2, 3]
 nums1 = nums1 + [4]
@@ -241,7 +240,7 @@ nums2 += [4]
 
 간단하게 보면 rebinding VS. mutation의 개념이다.
 
-### python "is" and "=="
+#### python "is" and "=="
 결론부터 말하자면 python의 `is`는 reference가 같은지 검사하고, `==`는 value가 같은지 검사한다.
 
 ```python
@@ -283,7 +282,7 @@ print(hex(id(c)))      # '0x102d8c570'
 print(hex(id(d)))      # '0x102d8c590'
 ```
 
-### List 조작
+#### List 조작
 List 객체를 생성하고 초기화 할 때 다음과 같이 진행 할 수 있다.
 
 ```python
@@ -298,7 +297,7 @@ list2 = [[0] for _ in range(8)]
 
 두 방법 모두 같은 결과를 가져온다. 그럼 무슨 차이가 있을까?
 
-첫번째 경우는 모든 원소들이 같은 값을 참조하게 된다. 전에 말했듯이 Python에서의 list는 referntial structure이기 때문이다. 그림으로 표현하면 다음과 같다.
+첫번째 경우는 모든 원소들이 같은 값을 참조하게 된다. 전에 말했듯이 Python에서의 list는 referential structure이기 때문이다. 그림으로 표현하면 다음과 같다.
 
 <img src="{{page.img_pth}}Dvei1.png">
 

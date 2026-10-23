@@ -1,9 +1,8 @@
 ---
-title: Pytorch의 Autograd Engine2 (Calculus)
-date: 2024-04-01 17:13:00 +0800
-categories: [AI, Pytorch]
-tags: [pytorch, autograd, deep learning, machine learning, neural networks, gradient descent, backpropagation, computational graphs, pytorch tutorial]
-
+title: PyTorch의 Autograd Engine2 (Calculus)
+date: 2024-04-01 17:13:00 +0900
+categories: [AI, PyTorch]
+tags: [pytorch, autograd, backpropagation, jacobian]
 use_math: true
 ---
 
@@ -53,8 +52,8 @@ x_1 \\
 \vdots \\
 x_n\end{bmatrix}=2\mathbf{x} $$
 
-### Backward for non-scaler variables
-조금 더 복잡한 상황을 생각해보자. n차원의 변수로 m차원으로 가는 함수 f가 있다고 할때, 위와 같이 각각의 모든 차원에 대해 모든 편미분 값을 구해야 한다. 이것을 calculus 수업에서 배웠던 `Jacobian Matix`라고 한다. 함수의 1차 partial derivative 값이 \\(ℝ^n\\)의 실수 벡터 공간에서 존재한다고 하면, jacobian 은 다음과 같이 \\(m \times n\\)행렬로 정의 할 수 있다.
+### Backward for non-scalar variables
+조금 더 복잡한 상황을 생각해보자. n차원의 변수로 m차원으로 가는 함수 f가 있다고 할때, 위와 같이 각각의 모든 차원에 대해 모든 편미분 값을 구해야 한다. 이것을 calculus 수업에서 배웠던 `Jacobian Matrix`라고 한다. 함수의 1차 partial derivative 값이 \\(ℝ^n\\)의 실수 벡터 공간에서 존재한다고 하면, jacobian 은 다음과 같이 \\(m \times n\\)행렬로 정의 할 수 있다.
 
 $$
 J = 

@@ -1,12 +1,12 @@
 ---
 title: (논문리뷰) Deep Fluids
-date: 2024-02-24 11:46:00 +0800
+date: 2024-02-24 11:46:00 +0900
 categories: [AI, Fluid Dynamics]
-tags: [ai, deep learning, generative Model, fluid dynamics, graphics, simulation]
+tags: [deep learning, generative model, fluid dynamics, simulation]
 use_math: true
 ---
 ## AI-CFD
-최근 들어 classical simulation 을 가속화 하려는 많은 시도가 있었다. 차원 축소 방법인 Proper Orthogonal Decomposition (POD), Reduced Order Mehod (ROM) 이 그동안 많이 쓰였지만, 두 기법이 사용하는 basis function은 일반적으로 선형 차원축소 방법이다. 선형적인 representation을 비선형적인 manifold 에 올려놓는 작업을 하게 되면 "explosion of subspace dimensionality" 현상이 일어날 수 있다. 해당 문제를 해결하고자 iterative convolution network를 이용하여 효과적으로 데이터를 압축하고, 비선형적인 데이터를 다룰수 있도록 제시한 문헌을 찾아 정리해 본다.
+최근 들어 classical simulation 을 가속화 하려는 많은 시도가 있었다. 차원 축소 방법인 Proper Orthogonal Decomposition (POD), Reduced Order Method (ROM) 이 그동안 많이 쓰였지만, 두 기법이 사용하는 basis function은 일반적으로 선형 차원축소 방법이다. 선형적인 representation을 비선형적인 manifold 에 올려놓는 작업을 하게 되면 "explosion of subspace dimensionality" 현상이 일어날 수 있다. 해당 문제를 해결하고자 iterative convolution network를 이용하여 효과적으로 데이터를 압축하고, 비선형적인 데이터를 다룰수 있도록 제시한 문헌을 찾아 정리해 본다.
 
 문헌: [Deep Fluids: A Generative Network for Parameterized Fluid Simulations](https://arxiv.org/pdf/1806.02071)
 
@@ -37,7 +37,7 @@ $$
 $$L_G(\mathbf{c}) = \left\| \mathbf{u}_c - \mathbf{G}(\mathbf{c}) \right\|_1
 $$
 
-두가지 방법의 차이는 아래와 같다. 실험 결롸, incompressible loss 사용시 성능이 향상되었다고 한다.
+두가지 방법의 차이는 아래와 같다. 실험 결과, incompressible loss 사용시 성능이 향상되었다고 한다.
 
 <img src="{{page.img_pth}}deepfluid_losses.png">
 

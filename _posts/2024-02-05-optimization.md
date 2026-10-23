@@ -1,8 +1,8 @@
 ---
 title: 다양한 optimization 기법들
-date: 2024-02-05 14:37:00 +0800
+date: 2024-02-05 14:37:00 +0900
 categories: [AI, Deep Learning]
-tags: [optimization, deep learning, neural networks, gradient descent,mini-batch, momentum, learning rate scheduling, weight decay, dropout, early stopping, hyperparameter tuning]
+tags: [optimization, gradient descent, momentum, adam, deep learning]
 use_math: true
 ---
 
@@ -62,7 +62,7 @@ SGD는 한번의 파라미터 업데이트를 위해 하나의 훈련 데이터�
 
 $$\theta_{t+1}=\theta_t-\eta\nabla_\theta J(\theta;x^{(i)}, y^{(i)})$$
 
-SGD는 batch GD보다 훨씬 빠르게 업데이트가 된다. 하지만 하나의 데이터에 의해 손실함수의 기울기가 계산되기 때문에 둘쭉 날쭉한 gradient로 파라미터를 업데이트 하게 된다.
+SGD는 batch GD보다 훨씬 빠르게 업데이트가 된다. 하지만 하나의 데이터에 의해 손실함수의 기울기가 계산되기 때문에 들쭉날쭉한 gradient로 파라미터를 업데이트 하게 된다.
 
 ### Mini-batch GD
 Mini-batch 사이즈의 데이터마다 손실함수를 만들고 gradient를 계산하여 파라미터를 업데이트 한다. Batch GD보다 빠르고, gradient의 크기도 들쭉 날쭉하지 않다.
@@ -87,7 +87,7 @@ $$v_4 = g_4 + \gamma g_3+ \gamma^2 g_2+ \gamma^3 g_1$$
 등등오래된 gradient의 영향력을 줄이며 모멘텀을 만든다. \\(\gamma\\) 값은 보통 0.9를 사용한다고 한다. 
 
 ## NAG
-Nestrov Accelerated Gradient(NAG) 는 lookahead gradient라는 업에디트 방법을 [Momentum](#momentum) 기법에서 약간 변형시킨 방법이다.
+Nesterov Accelerated Gradient(NAG) 는 lookahead gradient라는 업데이트 방법을 [Momentum](#momentum) 기법에서 약간 변형시킨 방법이다.
 
 <img src="{{page.img_pth}}momentum_optimizer.png" width="580">
 *일반적인 [Momentum](#momentum)기법*
@@ -133,7 +133,7 @@ $$G_{t, ii}=g^2_{1,i}+g^2_{2,i}+...+g^2_{t,i}$$
 
 $$\theta_{t+i}=\theta_{t}-\frac{\eta}{\sqrt{G_{t}+\epsilon}} \odot g_{t}$$
 
-업데이트 빈도수가 높았던 파라미터는 분모에 의해 \\(\eta\\) 보다 작게 업데이트 되는것을 알 수 있다. \\(\eta\\) 값은 주로 0.01을 사용한다고 한다. 하지만 Adagrad는 \\(t\\)가 증가하면서 분모가 커지게 되고, learning rate가 소실된가는 단점이 있다.
+업데이트 빈도수가 높았던 파라미터는 분모에 의해 \\(\eta\\) 보다 작게 업데이트 되는것을 알 수 있다. \\(\eta\\) 값은 주로 0.01을 사용한다고 한다. 하지만 Adagrad는 \\(t\\)가 증가하면서 분모가 커지게 되고, learning rate가 소실되어가는 단점이 있다.
 
 [참고 문헌](https://arxiv.org/abs/1609.04747)
 
@@ -225,7 +225,7 @@ Adam(Adaptive Moment estimation)은 [Adagrad](#adagrad), [Adadelta](#adadelta), 
 [Adam 문헌](https://arxiv.org/abs/1412.6980)
 
 ## NAdam
-NAdam은 Nesterov-accelerated Adaptive Memoment Adam으로 NAG와 Adam을 합친 기법이다. 이로 인해 Nadam은 Adam과 NAG의 장점을 결합하여, 빠르고 정확하게 전역 최솟값을 찾을 수 있게 된다.
+NAdam은 Nesterov-accelerated Adaptive Moment Adam으로 NAG와 Adam을 합친 기법이다. 이로 인해 Nadam은 Adam과 NAG의 장점을 결합하여, 빠르고 정확하게 전역 최솟값을 찾을 수 있게 된다.
 
 기존의 NAG에서 모멘텀을 조정하는 식은 다음과 같았다:
 

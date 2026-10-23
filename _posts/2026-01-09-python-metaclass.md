@@ -1,9 +1,8 @@
 ---
 title: Python의 Metaclass 이해하기
-date: 2026-01-09 12:00:00 +0800
+date: 2026-01-09 12:00:00 +0900
 categories: [Language, Python]
 tags: [python, metaclass, type, class, object, object-oriented programming, dynamic typing, python internals]
-use_math: true
 ---
 
 이 글은 Python의 metaclass를 이해하기 위해 반드시 필요한 개념들을 처음부터 끝까지 정리한 문서이다.
@@ -128,7 +127,7 @@ class Foo:
     pass
 
 print(type(Foo))     # <class 'type'>
-print(type(Foo()))   # <class '__main.__Foo'>
+print(type(Foo()))   # <class '__main__.Foo'>
 ```
 
 여기서 중요한 사실이 하나 나온다.

@@ -1,14 +1,14 @@
 ---
 title: DCGAN 구현
-date: 2024-01-10 21:25:00 +0800
+date: 2024-01-10 21:25:00 +0900
 categories: [AI, GAN]
-tags: [dcgan, deep learning, cnn, image generation, neural network, ml, ai, gan, image synthesis, computer vision, dnn, image processing, python, pytorch]
+tags: [gan, dcgan, generative model, deep learning, pytorch]
 use_math: true
 ---
-# DCGAN
+## DCGAN
 [이전 포스트](../DCGAN)를 토대로 Deep Convolutional Generative Adversarial Networks(DCGAN)을 구현해 보았다. 기존 GAN 모델보다 Convolution 연산만을 사용하여 생성 정확도를 엄청나게 올릴 수 있었다고 한다. 원문은 [링크](https://arxiv.org/abs/1511.06434) 참조!
 
-## Implement
+### Implement
 
 <img src="{{page.img_pth}}dcgan_generator.png">
 
@@ -22,7 +22,7 @@ use_math: true
 
 위 표는 문헌에서 제시한 모델의 가이드라인이다. 위 가이드라인을 따라 만들어보자.
 
-### Generator
+#### Generator
 {::options parse_block_html="true" /}
 <details><summary markdown="span">Generator Code</summary>
 
@@ -79,7 +79,7 @@ Generator는 총 5개의 layer로 이루어져있다. 마지막 layer를 제외�
 
 마지막 layer는 `tanh`를 사용하여 -1 ~ 1 의 범위로 스케일링 하고, ReLU activation과 BatchNorm을 사용해서 안정성을 더한 것으로 보인다.
 
-### Discriminator
+#### Discriminator
 {::options parse_block_html="true" /}
 <details><summary markdown="span">Discriminator Code</summary>
 
@@ -127,7 +127,7 @@ class Discriminator(nn.Module):
 
 Discriminator는 Generator와 비슷하지만 정 반대의 구조를 가지고 있다. 하지만 activation function으로 `nn.LeakyReLU`를 사용하고, 최종 결과 값을 sigmoid를 통해 참과 거짓을 도출한다.
 
-## Mode Collapse
+### Mode Collapse
 문헌에 나와있는 대로 parameter를 세팅해 주고 (learning rate, channels, beta, batch size, etc.), 학습을 진행해 보자. Dataset은 CelebA 데이터를 사용하고, 64x64의 사이즈로 resize 해주었다. 학습 결과를 보자.
 
 <img src="{{page.img_pth}}model_collapse.jpg" width="512">
@@ -138,7 +138,7 @@ Discriminator의 loss가 100으로 수렴하고 Generator의 loss가 0으로 수
 
 <img src="{{page.img_pth}}dcgan_to_100epochs.webp" width="256">
 
-## Fréchet Inception Distance
+### Fréchet Inception Distance
 기존에 GAN의 성능을 정량적으로 평가하는 방법은 사람이 눈으로 직접 평가하는 방법밖에 없었다. 사람이 눈으로 보고 판단하는 방법은 한계가 명확하다. 평가하는 사람의 주관이 들어갈 수 밖에 없고, 데이터가 많아질 경우 평가 소요 시간이 많이 늘어나게 된다. 이를 해결하고자 데이터를 정량적으로 평가하는 기법인 Fréchet Inception Distance(FID)가 나오게 된다.
 
 FID는 GAN을 이용해 생성된 데이터의 집합과 실제 생성하고자 하는 데이터 분포의 거리를 계산한다. 거리가 가까울수록 좋은 질의 데이터로 판단할 수 있다. FID 값을 산출하기 위해 사용되는 모델은 [Inception v3 모델](https://arxiv.org/pdf/1512.00567v3.pdf)의 coding layer 값을 사용한다고 한다. Inception v3 모델은 아래 그림과 같다. 여기서 coding layer는 가장 마지막 2048 채널의 pooling layer로 이미지 클래스를 분류하는 레이어 직전의 레이어이다. 다른 pretrained 모델이라해도 분류직전의 layer 값을 사용하면 FID를 산출할 수 있다.
@@ -159,4 +159,4 @@ Univariate의 경우를 생각해보자. Univariate인 경우에는 covariance�
 \text{FID} = \lvert \mu - \mu_{w} \rvert^{2}+ \lvert \sigma - \sigma_{w} \rvert^{2}
 \\]
 
-위처럼 Univatiate의 경우 두 분포의 평균, 편차의 차이를 각각 제곱하는 것과 같다. 단순 픽셀값을 비교하는 pixel distance와 다르게 데이터의 분포를 비교하므로 GAN의 평가 지표로 더 의미있게 쓰이는 것 같다.
+위처럼 Univariate의 경우 두 분포의 평균, 편차의 차이를 각각 제곱하는 것과 같다. 단순 픽셀값을 비교하는 pixel distance와 다르게 데이터의 분포를 비교하므로 GAN의 평가 지표로 더 의미있게 쓰이는 것 같다.

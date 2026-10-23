@@ -2,7 +2,7 @@
 title: 그래프에서의 Permutation Invariance와 Equivariance
 date: 2025-07-10 11:20:00 +0900
 categories: [AI, Graph]
-tags: [pytorch, graph, matrix operations, deep learning]
+tags: [graph, gnn, permutation invariance, permutation equivariance]
 use_math: true
 ---
 

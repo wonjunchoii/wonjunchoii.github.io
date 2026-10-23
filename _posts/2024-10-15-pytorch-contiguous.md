@@ -1,9 +1,8 @@
 ---
 title: PyTorch의 contiguous() 함수 이해하기
-date: 2024-10-15 20:33:00 +0800
-categories: [AI, Pytorch]
+date: 2024-10-15 20:33:00 +0900
+categories: [AI, PyTorch]
 tags: [pytorch, tensor, contiguous, view, reshape, transpose, permute]
-use_math: true
 ---
 
 ## 1. 메모리 관점에서의 Contiguous란?
