@@ -1,4 +1,5 @@
 ---
+lang: en
 layout: page
 title: About
 icon: fas fa-user

@@ -1,4 +1,5 @@
 ---
+lang: en
 layout: page
 title: Publications
 icon: fas fa-file-alt

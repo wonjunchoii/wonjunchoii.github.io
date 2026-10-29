@@ -1,4 +1,5 @@
 ---
+lang: en
 layout: page
 title: CV
 icon: fas fa-user-graduate
@@ -25,7 +26,7 @@ order: 3
         <div class="timeline-item-title">Seoul National University</div>
         <p class="timeline-degree">Ph.D. in Materials Science and Engineering</p>
         <span class="timeline-meta">Mar. 2026 – Present · Republic of Korea</span>
-        <p class="timeline-text detail">Advised by <a href="https://scholar.google.com/citations?user=DYhDLrAAAAAJ&hl=ko" target="_blank">Seungwoo Han</a></p>
+        <p class="timeline-text detail">Advised by <a href="https://scholar.google.com/citations?user=DYhDLrAAAAAJ&hl=ko" target="_blank">Seungwu Han</a></p>
       </li>
       <li class="timeline-item">
         <div class="timeline-item-title">Imperial College London</div>
@@ -72,7 +73,7 @@ order: 3
             <p class="project-meta">Personal Project</p>
           </div>
           <div class="project-summary-right">
-            <a href="" target="_blank" class="project-github-link" title="View on GitHub">
+            <a href="https://github.com/wonjunchoii" target="_blank" class="project-github-link" title="View on GitHub">
               <i class="fab fa-github"></i>
             </a>
             <span class="project-date">Jan. 2023 – Feb. 2023</span>
