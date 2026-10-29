@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>정규 모드와 포논</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 3 §4 Lattice vibrations and Phonons (계속)</div>
+  <h1>2장. 정규 모드, 2원자 사슬, 그리고 포논</h1>
+  <p>1장에서 파동 하나의 분산 관계를 얻었습니다. 이번 장에서는 실제 원자의 불규칙한 진동이 그런 파동(정규 모드)들의 합이라는 것을 확인하고, 원자가 두 종류일 때와 3차원일 때 가지(branch)가 어떻게 늘어나는지 본 다음, 모드 하나의 에너지를 양자화해서 포논을 정의합니다.</p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <nav class="toc" aria-label="단계">
+    <a href="phonon_01_dispersion.html">← 1장</a>
+    <a href="#s1"><b>1</b>정규 모드의 중첩</a>
+    <a href="#s2"><b>2</b>원자가 두 종류인 사슬</a>
+    <a href="#s3"><b>3</b>3차원: 종파와 횡파</a>
+    <a href="#s4"><b>4</b>에너지 양자화와 포논</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1 · Lecture 3</div>
+    <h2>불규칙한 진동 = 정규 모드의 합</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>1장 STEP 2에서 원자 하나를 당겼다 놓았을 때 사슬은 복잡하게 움직였습니다. 그 움직임을 모드별로 쪼개 봅니다. 양 끝이 벽에 고정된 원자 N개 사슬에서는 모드가 정상파(사인파)입니다.</p>
+      <p class="try">해 보기: "선택한 원자 당겼다 놓기"를 누른 뒤 m 슬라이더를 1부터 10까지 올려 보세요. 몇 개 모드부터 검은 점과 겹치나요? 맨 아래 막대는 시간이 지나도 변하나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-hl="c1c">
+          <div class="d-math">\(u_j^{(n)}(t) = A_n \sin(k_n ja)\cos(\omega_n t + \phi_n),\quad k_n = \dfrac{n\pi}{(N+1)a},\; n = 1,\dots,N\)</div>
+          <div class="d-why">양 끝(j = 0, N+1)에서 sin = 0이 되도록 고른 k입니다. 주기 경계 조건 대신 고정 경계를 써도 모드 수는 N개로 같습니다.</div>
+          <div class="d-look">가운데 그림의 한 줄이 모드 하나(정상파 sin(k<sub>n</sub>ja))입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c1c">
+          <div class="d-math">\(\omega_n = 2\sqrt{K/M}\,\sin(k_n a/2)\)</div>
+          <div class="d-why">각 모드는 1장의 분산 관계를 그대로 따릅니다.</div>
+          <div class="d-look">각 줄 왼쪽의 ω가 그 모드의 진동수입니다. 위 줄(긴 파장)일수록 느리게 흔들립니다.</div>
+        </div>
+        <div class="d-step" data-hl="c1c">
+          <div class="d-math">운동 방정식 \(M\ddot u_j = K(u_{j+1}+u_{j-1}-2u_j)\) 는 u에 대해 선형 → 해들의 합도 해</div>
+          <div class="d-why">중첩 원리. 조화 근사에서만 성립합니다.</div>
+          <div class="d-look">각 줄은 다른 줄과 상관없이 자기 진동수로만 움직입니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c1b c1c">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(u_j(t) = \displaystyle\sum_{n=1}^{N} A_n \sin(k_n ja)\cos(\omega_n t + \phi_n)\)</div>
+          <div class="d-why">어떤 초기 변위든 N개 모드의 합으로 쓸 수 있습니다. 오른쪽 가운데 그림이 각 항입니다.</div>
+          <div class="d-look">m 슬라이더를 10으로 올리면 파란 선이 검은 점을 정확히 지납니다.</div>
+        </div>
+        <div class="d-step" data-hl="c1b c1c">
+          <div class="d-math">\(Q_n(t) = \sqrt{\dfrac{2}{N+1}}\displaystyle\sum_{j=1}^{N} u_j(t)\,\sin(k_n ja)\)</div>
+          <div class="d-why">계수를 꺼내는 방법 = 이산 사인(푸리에) 변환. 서로 다른 모드의 사인끼리 곱해서 더하면 0이 되는 직교성 덕분입니다.</div>
+          <div class="d-look">실제 변위(검은 점)에서 계산한 각 모드의 크기가 가운데 줄들의 진폭입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c1d">
+          <div class="d-math">\(E_n = \tfrac12 M\left(\dot Q_n^2 + \omega_n^2 Q_n^2\right) = \text{일정}\)</div>
+          <div class="d-why">모드 하나는 진동수 ω<sub>n</sub>인 독립된 조화 진동자입니다. 아래 막대 높이가 시간이 지나도 변하지 않습니다. 모드끼리 에너지를 주고받으려면 비조화성이 필요합니다 (Lecture 6–7).</div>
+          <div class="d-look">맨 아래 막대 높이가 시간이 지나도 그대로입니다. 막대를 누르면 그 모드 하나만 들뜹니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>아무리 불규칙해 보여도 조화 사슬의 운동은 서로 독립인 N개 진동자(모드)의 합입니다. 각 모드의 에너지가 영원히 보존되므로 조화 결정에서는 포논끼리 산란되지 않습니다. 열저항이 생기려면 비조화성이 필요합니다 (Lecture 6–7).</p>
+        <details><summary>확인 질문: 원자 하나만 당겼을 때 거의 모든 모드가 들뜨는 이유는?</summary><p>한 점에 몰린 변위를 사인파로 만들려면 짧은 파장부터 긴 파장까지 모두 필요합니다. 맨 아래 막대에서 여러 모드에 에너지가 나뉜 것을 확인하세요.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">실제 사슬 (원자를 눌러 고른 뒤 아래 버튼)</p><canvas id="c1a" style="height:90px"></canvas></div>
+    <div class="card"><p class="cap">변위 u<sub>j</sub>: 검은 점 = 실제, 파란 선 = 낮은 모드부터 m개만 더한 것</p><canvas id="c1b" style="height:130px"></canvas></div>
+    <div class="card"><p class="cap">모드별 성분 Q<sub>n</sub>(t) sin(k<sub>n</sub>ja). 이 N줄을 세로로 더하면 위의 검은 점이 됩니다.</p><canvas id="c1c" style="height:300px"></canvas></div>
+    <div class="card"><p class="cap">모드 에너지 E<sub>n</sub> (막대를 누르면 그 모드 하나만 들뜸)</p><canvas id="c1d" style="height:120px"></canvas></div>
+    <div class="card controls">
+      <button class="primary" id="b1pull">선택한 원자 당겼다 놓기</button>
+      <button id="b1rand">무작위 초기 상태</button>
+      <label>더할 모드 수 m <input type="range" id="m1" min="1" max="10" step="1" value="3"></label>
+      <div class="readout" id="r1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2 · Lecture 3</div>
+    <h2>원자가 두 종류인 사슬: 음향 가지와 광학 가지</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>단위 세포(길이 a)에 질량 M<sub>1</sub>, M<sub>2</sub>인 원자가 하나씩 있습니다. 원자 수가 2N개가 되면서 같은 k에 진동수가 두 개 생깁니다. 오른쪽 그래프에서 점을 눌러 가지와 k를 고르세요.</p>
+      <p class="try">해 보기: M₂/M₁ 슬라이더를 1까지 내렸다 올리며 띠 간격을 보세요. "음향, 작은 k"와 "광학, 작은 k" 버튼으로 두 원자의 움직임을 비교하세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-hl="c2b">
+          <div class="d-math">세포 n의 두 원자 변위: \(u_n\) (질량 \(M_1\)), \(v_n\) (질량 \(M_2\)), 모든 용수철 K</div>
+          <div class="d-look">주황 원 = M₁, 파랑 원 = M₂. 한 세포에 하나씩 있습니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2b">
+          <div class="d-math">\(M_1\ddot u_n = K(v_n + v_{n-1} - 2u_n),\qquad M_2\ddot v_n = K(u_{n+1} + u_n - 2v_n)\)</div>
+          <div class="d-look">M₁ 원자는 양옆의 M₂ 원자에, M₂ 원자는 양옆의 M₁ 원자에 묶여 있습니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2c">
+          <div class="d-math">\(u_n = u\,e^{i(kna-\omega t)},\qquad v_n = v\,e^{i(kna-\omega t)}\)</div>
+          <div class="d-why">두 원자는 진폭 u, v와 위상이 서로 다를 수 있습니다.</div>
+          <div class="d-look">주황 점(u)과 파랑 점(v)이 각자의 진폭과 위상으로 움직입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2a">
+          <div class="d-math">\(\begin{pmatrix} 2K - M_1\omega^2 & -K(1+e^{-ika}) \\ -K(1+e^{ika}) & 2K - M_2\omega^2 \end{pmatrix}\begin{pmatrix} u \\ v\end{pmatrix} = 0\)</div>
+          <div class="d-look">u = v = 0 말고 다른 해가 있으려면 행렬식이 0이어야 합니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2a">
+          <div class="d-math">\(\det = 0:\quad M_1M_2\,\omega^4 - 2K(M_1+M_2)\,\omega^2 + 4K^2\sin^2\tfrac{ka}{2} = 0\)</div>
+          <div class="d-look">같은 k에 ω²이 두 개 나오는 2차 방정식입니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c2a">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\omega_\pm^2 = K\left(\tfrac{1}{M_1}+\tfrac{1}{M_2}\right) \pm K\sqrt{\left(\tfrac{1}{M_1}+\tfrac{1}{M_2}\right)^2 - \dfrac{4\sin^2(ka/2)}{M_1M_2}}\)</div>
+          <div class="d-why">− 부호 = 음향(acoustic) 가지, + 부호 = 광학(optical) 가지</div>
+          <div class="d-look">위 그래프의 두 곡선: 아래 파랑 = 음향, 위 주황 = 광학.</div>
+        </div>
+        <div class="d-step" data-hl="c2b c2c" data-act="ac0">
+          <div class="d-math">\(k \to 0\): 음향 \(u \simeq v,\ \omega \to 0\) / 광학 \(M_1u + M_2v \simeq 0\)</div>
+          <div class="d-why">음향: 두 원자가 같이 움직임. 광학: 서로 반대로 움직이고 세포의 질량 중심(작은 세로 눈금)은 거의 그대로입니다.</div>
+          <div class="d-look">음향 가지의 작은 k로 이동했습니다. 두 원자가 같이 움직입니다. "광학, 작은 k"를 눌러 반대로 움직이는 것도 보세요.</div>
+        </div>
+        <div class="d-step" data-hl="c2a" data-act="kpi">
+          <div class="d-math">\(k = \pi/a:\quad \omega = \sqrt{2K/M_1},\ \sqrt{2K/M_2}\)</div>
+          <div class="d-why">두 값 사이에는 허용된 진동이 없습니다(띠 간격). M<sub>2</sub>/M<sub>1</sub> = 1이면 간격이 닫히고 1장의 단원자 사슬을 반으로 접은 것과 같아집니다.</div>
+          <div class="d-look">k = π/a로 이동했습니다. 띠 간격 위아래 끝값이 √(2K/M₁), √(2K/M₂)입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2a">
+          <div class="d-math">원자 2N개 → 모드 2N개 = 음향 N개 + 광학 N개</div>
+          <div class="d-look">곡선마다 k가 N개, 가지가 둘이라 모드가 2N개입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>단위 세포에 원자가 하나 더 들어오면 같은 k에 "같이 움직이는 방식"(음향)과 "서로 반대로 움직이는 방식"(광학) 두 가지가 생깁니다. 광학 모드는 k → 0에서도 진동수가 유한하고, 이온 결정에서는 두 이온이 반대로 움직이며 빛(적외선)과 상호작용합니다.</p>
+        <details><summary>확인 질문: M₂ = M₁이면 띠 간격은?</summary><p>√(2K/M₁) = √(2K/M₂)라서 닫힙니다. 원자 간격 a/2인 단원자 사슬을 세포 길이 a로 본 것이라, 1장의 분산이 영역 경계에서 접혀 들어온 모양이 됩니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">분산 관계. 점을 누르거나 끌어서 고르세요.</p><canvas id="c2a" style="height:240px"></canvas></div>
+    <div class="card"><p class="cap">사슬 운동. 주황 = M<sub>1</sub>, 파랑 = M<sub>2</sub> (원 크기 ∝ 질량), 세로 눈금 = 세포의 질량 중심</p><canvas id="c2b" style="height:110px"></canvas></div>
+    <div class="card"><p class="cap">변위: 주황 = u<sub>n</sub> (M<sub>1</sub>), 파랑 = v<sub>n</sub> (M<sub>2</sub>)</p><canvas id="c2c" style="height:130px"></canvas></div>
+    <div class="card controls">
+      <label>M<sub>2</sub>/M<sub>1</sub> <input type="range" id="m2" min="1" max="4" step="0.05" value="2"></label>
+      <button id="b2ac">음향, 작은 k</button>
+      <button id="b2op">광학, 작은 k</button>
+      <div class="readout" id="r2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3 · Lecture 3, 4</div>
+    <h2>3차원: 같은 k에 편광이 세 개</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>3차원 결정에서는 원자가 파동 진행 방향으로도, 그에 수직인 두 방향으로도 움직일 수 있습니다. 오른쪽은 x 방향으로 진행하는 파동을 2차원 격자에서 본 것입니다.</p>
+      <p class="try">해 보기: LA와 TA를 바꿔 가며 주황 세로줄의 움직임을 보세요. 같은 ka에서 어느 쪽 ω가 큰가요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-hl="c3a">
+          <div class="d-math">\(\mathbf u_j = A\,\boldsymbol\varepsilon\,e^{i(\mathbf k\cdot\mathbf r_j - \omega t)}\)</div>
+          <div class="d-why">변위가 벡터가 되고 ε는 움직이는 방향(편광)입니다.</div>
+          <div class="d-look">점 하나하나가 2차원 격자의 원자이고, 파동은 x 방향으로 진행합니다.</div>
+        </div>
+        <div class="d-step" data-hl="c3a" data-act="L">
+          <div class="d-math">ε ∥ k: 종파 (longitudinal, LA)</div>
+          <div class="d-why">원자 간격이 좁아졌다 넓어졌다 합니다. 소리처럼 밀도가 출렁입니다.</div>
+          <div class="d-look">종파 LA로 바꿨습니다. 주황 세로줄이 좌우로 움직여 줄 간격이 출렁입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c3a" data-act="T">
+          <div class="d-math">ε ⊥ k: 횡파 (transverse, TA<sub>1</sub>, TA<sub>2</sub>)</div>
+          <div class="d-why">원자 줄이 옆으로 미끄러집니다(전단). 3차원에서는 수직 방향이 두 개라 TA가 두 개입니다.</div>
+          <div class="d-look">횡파 TA로 바꿨습니다. 주황 세로줄이 위아래로 미끄러집니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c3b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\omega_T < \omega_L,\quad v_{TA} < v_{LA}\)</div>
+          <div class="d-why">전단에 대한 복원력이 더 약하기 때문입니다. 예: 다이아몬드 [100] v<sub>LA</sub> = 17.5 km/s, v<sub>TA</sub> = 12.8 km/s (Lecture 4).</div>
+          <div class="d-look">분산 그래프에서 TA 곡선이 LA보다 아래입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c3b">
+          <div class="d-math">단위 세포에 원자 p개 → 가지 3p개 = 음향 3개 (LA, TA<sub>1</sub>, TA<sub>2</sub>) + 광학 3(p−1)개</div>
+          <div class="d-why">Si는 p = 2라서 6개 가지. 모드 총수는 3pN개입니다.</div>
+          <div class="d-look">이 2차원 그림에는 TA가 하나지만, 3차원에서는 수직 방향이 둘이라 TA가 두 개입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>3차원에서는 같은 k에도 움직이는 방향(편광)에 따라 다른 가지가 생깁니다. 횡파는 원자 줄을 미끄러뜨리는 전단이라 복원력이 약하고 느립니다. 실제 물질의 분산 그래프(Si, GaAs)에 가지가 여러 개 보이는 이유입니다.</p>
+        <details><summary>확인 질문: 원자가 2개인 GaAs의 가지 수는?</summary><p>3 × 2 = 6개입니다. 음향 3개(LA, TA₁, TA₂)와 광학 3개(LO, TO₁, TO₂).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap" id="cap3">2차원 격자. 파동 진행 방향 k = x</p><canvas id="c3a" style="height:230px"></canvas></div>
+    <div class="row2">
+      <div class="card"><p class="cap">분산 관계 (K<sub>T</sub> = 0.35 K<sub>L</sub>로 가정)</p><canvas id="c3b" style="height:180px"></canvas></div>
+      <div class="card controls" style="align-content:center">
+        <button class="primary" id="b3L">종파 LA</button>
+        <button id="b3T">횡파 TA</button>
+        <label>ka <input type="range" id="k3" min="0.15" max="3.1416" step="0.01" value="0.9"></label>
+        <div class="readout" id="r3"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4 · Lecture 1, 3</div>
+    <h2>에너지 양자화: 포논</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>STEP 1에서 모드 하나는 독립된 조화 진동자였습니다. 양자역학에서 조화 진동자의 에너지는 ħω 간격으로만 존재합니다. 그 에너지 한 칸이 포논입니다. 아래에서 모드를 고르고 포논을 넣어 보세요.</p>
+      <p class="try">해 보기: 모드를 하나 골라 포논을 하나씩 넣어 보세요. 사다리 칸 간격이 모드마다 어떻게 다른가요? 영점 진동을 껐다 켜며 사슬 움직임도 비교하세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-hl="c4b">
+          <div class="d-math">모드 n = 진동수 \(\omega_n\)인 조화 진동자 하나</div>
+          <div class="d-why">STEP 1의 E<sub>n</sub> = ½M(Q̇<sub>n</sub>² + ω<sub>n</sub>²Q<sub>n</sub>²)</div>
+          <div class="d-look">파란 포물선이 모드 하나의 퍼텐셜 ½Mω²Q²입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4b">
+          <div class="d-math">고전: \(E_n = \tfrac12 M\omega_n^2 A_n^2\)</div>
+          <div class="d-why">진폭에 따라 연속적인 값</div>
+          <div class="d-look">고전역학에서는 포물선 안 어느 높이든 가능합니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c4a c4b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">양자: \(E_n = \left(n_k + \tfrac12\right)\hbar\omega_n,\quad n_k = 0, 1, 2, \dots\)</div>
+          <div class="d-why">n<sub>k</sub> = 그 모드에 들어 있는 포논의 개수. 포논 하나는 에너지 ħω와 결정 운동량 ħk를 가진 준입자입니다.</div>
+          <div class="d-look">사다리 칸만 허용됩니다. 포논 +1을 누르면 한 칸 올라가고, 왼쪽 그림에 점이 하나 늘어납니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4b c4c" data-act="zp">
+          <div class="d-math">\(n_k = 0\) 에서도 \(\tfrac12\hbar\omega_n\) 이 남음</div>
+          <div class="d-why">영점 진동. 절대 0도에서도 원자는 완전히 멈추지 않습니다.</div>
+          <div class="d-look">영점 진동을 켰습니다. 포논이 0개여도 사슬이 조금 떨립니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4a">
+          <div class="d-math">\(E_\text{격자} = \displaystyle\sum_k \left(n_k + \tfrac12\right)\hbar\omega_k\)</div>
+          <div class="d-why">결정 전체의 진동 에너지 = 모든 모드의 포논 에너지 합. 온도 T에서 n<sub>k</sub>가 평균적으로 얼마인지는 다음 장(Lecture 4, Bose-Einstein 분포)에서 다룹니다.</div>
+          <div class="d-look">왼쪽 그림의 점 전체가 결정의 포논 배치이고, 표시줄의 "격자 전체"가 이 합입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>포논은 "모드 하나의 에너지 한 칸"입니다. 같은 포논 하나라도 고주파 모드의 것은 에너지(ħω)가 큽니다. 결정의 진동 상태는 모드마다 포논이 몇 개인지(n<sub>k</sub>)로 완전히 정해지고, 온도가 n<sub>k</sub>를 어떻게 정하는지가 3장의 주제입니다.</p>
+        <details><summary>확인 질문: 같은 에너지를 넣으면 저주파 모드와 고주파 모드 중 포논 수가 많은 쪽은?</summary><p>저주파 모드입니다. 한 칸(ħω)이 작아서 같은 에너지로 더 많은 포논을 채웁니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="row2">
+      <div class="card"><p class="cap">모드별 포논 개수 (점 하나 = 포논 하나). 열을 눌러 모드 선택</p><canvas id="c4a" style="height:230px"></canvas></div>
+      <div class="card"><p class="cap">고른 모드의 에너지 사다리 (세로축 단위 ħω<sub>max</sub>)</p><canvas id="c4b" style="height:230px"></canvas></div>
+    </div>
+    <div class="card"><p class="cap">이 포논 배치에 해당하는 사슬 운동 (같은 에너지의 고전 진폭으로 그림)</p><canvas id="c4c" style="height:90px"></canvas></div>
+    <div class="card controls">
+      <button class="primary" id="b4add">포논 +1</button>
+      <button id="b4sub">포논 −1</button>
+      <button id="b4clear">모두 비우기</button>
+      <button id="b4rand">무작위로 채우기</button>
+      <label><input type="checkbox" id="zp4" checked> 영점 진동 포함</label>
+      <div class="readout" id="r4"></div>
+    </div>
+  </div>
+</section>
+
+<section class="summary" id="sum">
+  <h2>정리: 결정의 진동 = 모드들의 합, 모드의 에너지 한 칸 = 포논 (Lecture 3)</h2>
+  <p>원자들의 불규칙한 진동은 서로 독립인 정규 모드들의 합이고, 단위 세포와 차원이 가지(branch)의 수를 정하며, 모드 하나의 에너지는 ħω 단위로 띄엄띄엄합니다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>단계</th><th>결과</th><th>뜻</th></tr></thead>
+      <tbody>
+        <tr><th>1. 정규 모드</th><td>u<sub>j</sub>(t) = Σ<sub>n</sub> A<sub>n</sub> sin(k<sub>n</sub>ja) cos(ω<sub>n</sub>t + φ<sub>n</sub>)</td><td>모드끼리 에너지를 주고받지 않음 → 조화 결정에서는 산란 없음</td></tr>
+        <tr><th>2. 2원자 사슬</th><td>같은 k에 음향·광학 두 가지</td><td>광학 모드는 k → 0에서도 진동수가 유한</td></tr>
+        <tr><th>3. 3차원</th><td>같은 k에 편광 세 개 (LA, TA×2)</td><td>횡파는 복원력이 약해 느림</td></tr>
+        <tr><th>4. 양자화</th><td>E<sub>k</sub> = (n<sub>k</sub> + ½)ħω<sub>k</sub></td><td>포논 = 모드 하나의 에너지 한 칸, 상태는 n<sub>k</sub>들로 정해짐</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_03_dos_heat.html">3장으로 →</a> (Lecture 4).</b> 온도 T에서 각 모드에 포논이 평균 몇 개 들어가는지는 Bose-Einstein 분포 n = 1/(e<sup>ħω/k<sub>B</sub>T</sup> − 1)가 정합니다. 여기에 상태 밀도 D(ω)를 곱하면 내부 에너지와 비열이 나옵니다.</p>
+</section>
+
+<footer>
+  <p>STEP 4의 사슬 그림은 각 모드의 에너지를 같은 에너지의 고전 진동 진폭으로 바꿔 그린 것입니다. 실제 양자 상태는 정해진 궤적이 없고 확률로만 기술됩니다. 수치는 K = M = a = 1 기준이고, 변위는 과장해서 그렸습니다.</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// 고정 경계 사슬의 정규 모드 (STEP 1, 4 공용). 인덱스는 0부터: 모드 n ↔ n+1번째, 원자 j ↔ j+1번째
+function makeModes(N) {
+  const k = new Float64Array(N), w = new Float64Array(N), S = [];
+  const c = Math.sqrt(2 / (N + 1));
+  for (let n = 0; n < N; n++) {
+    k[n] = Math.PI * (n + 1) / (N + 1);
+    w[n] = 2 * Math.sin(k[n] / 2);
+    const row = new Float64Array(N);
+    for (let j = 0; j < N; j++) row[j] = c * Math.sin(Math.PI * (n + 1) * (j + 1) / (N + 1));
+    S.push(row);
+  }
+  return { N, k, w, S, c };
+}
+
+// ================================================================== STEP 1
+const M1 = makeModes(10);
+const S1 = { Q0: new Float64Array(10), P0: new Float64Array(10), t: 0, sel: 3, m: 3, Q: new Float64Array(10), u: new Float64Array(10) };
+function s1FromU(u, v) {
+  for (let n = 0; n < M1.N; n++) {
+    let q = 0, p = 0;
+    for (let j = 0; j < M1.N; j++) { q += M1.S[n][j] * u[j]; p += M1.S[n][j] * v[j]; }
+    S1.Q0[n] = q; S1.P0[n] = p;
+  }
+  S1.t = 0;
+}
+function s1Pull() { const u = new Float64Array(M1.N); u[S1.sel] = 0.45; s1FromU(u, new Float64Array(M1.N)); }
+function s1Rand() {
+  for (let n = 0; n < M1.N; n++) {
+    const E = 0.004 * -Math.log(1 - Math.random()), ph = 2 * Math.PI * Math.random();
+    S1.Q0[n] = Math.sqrt(2 * E) / M1.w[n] * Math.cos(ph);
+    S1.P0[n] = -Math.sqrt(2 * E) * Math.sin(ph);
+  }
+  S1.t = 0;
+}
+function s1Single(n) { S1.Q0.fill(0); S1.P0.fill(0); S1.Q0[n] = 0.75; S1.t = 0; }
+s1Pull();
+document.getElementById('b1pull').addEventListener('click', s1Pull);
+document.getElementById('b1rand').addEventListener('click', s1Rand);
+const m1 = document.getElementById('m1');
+m1.addEventListener('input', () => { S1.m = +m1.value; });
+const c1a = document.getElementById('c1a'), c1d = document.getElementById('c1d');
+c1a.addEventListener('pointerdown', e => {
+  const r = c1a.getBoundingClientRect(), sp = r.width / (M1.N + 1);
+  const j = Math.round((e.clientX - r.left) / sp) - 1;
+  if (j >= 0 && j < M1.N) S1.sel = j;
+});
+c1d.addEventListener('pointerdown', e => {
+  const r = c1d.getBoundingClientRect();
+  const n = Math.floor((e.clientX - r.left - 30) / ((r.width - 40) / M1.N));
+  if (n >= 0 && n < M1.N) s1Single(n);
+});
+
+function drawS1(dt) {
+  S1.t += dt;
+  const N = M1.N, Q = S1.Q, u = S1.u, E = new Float64Array(N);
+  let ampMax = 1e-9;
+  for (let n = 0; n < N; n++) {
+    const w = M1.w[n], c = Math.cos(w * S1.t), s = Math.sin(w * S1.t);
+    Q[n] = S1.Q0[n] * c + S1.P0[n] / w * s;
+    const P = -S1.Q0[n] * w * s + S1.P0[n] * c;
+    E[n] = 0.5 * (P * P + w * w * Q[n] * Q[n]);
+    ampMax = Math.max(ampMax, Math.hypot(S1.Q0[n], S1.P0[n] / w) * M1.c);
+  }
+  for (let j = 0; j < N; j++) { let s = 0; for (let n = 0; n < N; n++) s += M1.S[n][j] * Q[n]; u[j] = s; }
+  const recon = x => { let s = 0; for (let n = 0; n < S1.m; n++) s += Q[n] * M1.c * Math.sin(M1.k[n] * x); return s; };
+  let err = 0;
+  for (let j = 0; j < N; j++) err += (u[j] - recon(j + 1)) ** 2;
+  document.getElementById('r1').innerHTML = `<span>m =</span> ${S1.m} <span>&nbsp;재구성 오차(RMS) =</span> ${Math.sqrt(err / N).toFixed(4)} <span>&nbsp;총에너지 =</span> ${E.reduce((a, b) => a + b, 0).toFixed(4)}`;
+
+  // 사슬
+  let { g, w, h } = fit(c1a);
+  const sp = w / (N + 1), y = h * 0.55, r = Math.min(8, sp * 0.26), X = j => (j + 1) * sp + (j >= 0 && j < N ? u[j] : 0) * sp;
+  wall(g, X(-1), y, 40, -1); wall(g, X(N), y, 40, 1);
+  for (let j = -1; j < N; j++) spring(g, X(j) + (j >= 0 ? r : 0), X(j + 1) - (j + 1 < N ? r : 0), y, C.spring, 4, 4, 1.2);
+  for (let j = 0; j < N; j++) atom(g, X(j), y, r, C.atom, j === S1.sel ? C.accent : null);
+
+  // u_j 와 재구성
+  ({ g, w, h } = fit(document.getElementById('c1b')));
+  const yr = Math.max(0.5, ampMax * 1.6);
+  let f = frame(g, w, h, [0, N + 1], [-yr, yr], { l: 10, r: 10, t: 8, b: 16 });
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(f.x0, f.Y(0)); g.lineTo(f.x1, f.Y(0)); g.stroke();
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= 300; i++) { const x = (N + 1) * i / 300; i ? g.lineTo(f.X(x), f.Y(recon(x))) : g.moveTo(f.X(x), f.Y(recon(x))); }
+  g.stroke();
+  for (let j = 0; j < N; j++) atom(g, f.X(j + 1), f.Y(u[j]), 4.5, C.atom);
+  text(g, `낮은 모드 ${S1.m}개의 합`, f.x1, f.y1 + 10, C.wave, 'right');
+
+  // 모드별 성분
+  ({ g, w, h } = fit(document.getElementById('c1c')));
+  const rowH = (h - 8) / N, x0 = 62, x1 = w - 10, Xs = x => x0 + x / (N + 1) * (x1 - x0), sc = rowH * 0.42 / ampMax;
+  for (let n = 0; n < N; n++) {
+    const yc = 4 + rowH * (n + 0.5), on = n < S1.m, col = on ? C.wave : C.muted;
+    g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, yc); g.lineTo(x1, yc); g.stroke();
+    g.strokeStyle = col; g.lineWidth = on ? 1.6 : 1; g.beginPath();
+    for (let i = 0; i <= 200; i++) { const x = (N + 1) * i / 200, yy = yc - sc * Q[n] * M1.c * Math.sin(M1.k[n] * x); i ? g.lineTo(Xs(x), yy) : g.moveTo(Xs(x), yy); }
+    g.stroke();
+    for (let j = 0; j < N; j++) atom(g, Xs(j + 1), yc - sc * M1.S[n][j] * Q[n], 2.6, col);
+    text(g, `n=${n + 1}`, 4, yc - 2, on ? C.fg : C.muted, 'left', 'middle');
+    text(g, `ω=${M1.w[n].toFixed(2)}`, 4, yc + 9, C.muted, 'left', 'middle');
+  }
+
+  // 모드 에너지
+  ({ g, w, h } = fit(c1d));
+  const Emax = Math.max(...E) * 1.15 || 1;
+  f = frame(g, w, h, [0, N], [0, Emax], { l: 30, r: 10, t: 8, b: 18 });
+  for (let n = 0; n < N; n++) {
+    g.fillStyle = n < S1.m ? C.wave : C.line;
+    const xa = f.X(n + 0.15), xb = f.X(n + 0.85);
+    g.fillRect(xa, f.Y(E[n]), xb - xa, f.y0 - f.Y(E[n]));
+    text(g, String(n + 1), (xa + xb) / 2, h - 4, C.muted, 'center');
+  }
+  text(g, 'E_n', 4, f.y1 + 8, C.muted);
+}
+
+// ================================================================== STEP 2
+const S2 = { r: 2, k: 0.6, br: 0, t: 0 };
+const m2 = document.getElementById('m2');
+m2.addEventListener('input', () => { S2.r = +m2.value; });
+function omega2(k, br) {
+  const Ma = 1, Mb = S2.r, s = 1 / Ma + 1 / Mb;
+  const d = Math.sqrt(Math.max(0, s * s - 4 * Math.sin(k / 2) ** 2 / (Ma * Mb)));
+  return Math.sqrt(Math.max(0, s + (br ? d : -d)));
+}
+function eigen2(k, w) {
+  const Ma = 1, Mb = S2.r;
+  // 1행에서: U = K(1+e^{-ika}), V = 2K - M1 ω²     2행에서: U = 2K - M2 ω², V = K(1+e^{ika})
+  const A = { Ur: 1 + Math.cos(k), Ui: -Math.sin(k), Vr: 2 - Ma * w * w, Vi: 0 };
+  const B = { Ur: 2 - Mb * w * w, Ui: 0, Vr: 1 + Math.cos(k), Vi: Math.sin(k) };
+  const nA = A.Ur ** 2 + A.Ui ** 2 + A.Vr ** 2, nB = B.Ur ** 2 + B.Ui ** 2 + B.Vr ** 2 + B.Vi ** 2;
+  const e = nA > nB ? A : B;
+  const s = Math.max(Math.hypot(e.Ur, e.Ui), Math.hypot(e.Vr, e.Vi));
+  return { Ur: e.Ur / s, Ui: e.Ui / s, Vr: e.Vr / s, Vi: e.Vi / s };
+}
+document.getElementById('b2ac').addEventListener('click', () => { S2.k = 0.25; S2.br = 0; });
+document.getElementById('b2op').addEventListener('click', () => { S2.k = 0.25; S2.br = 1; });
+const c2a = document.getElementById('c2a');
+let f2 = null;
+function pick2(e) {
+  if (!f2) return;
+  const r = c2a.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  let k = -Math.PI + (px - f2.x0) / (f2.x1 - f2.x0) * 2 * Math.PI;
+  k = Math.max(-Math.PI, Math.min(Math.PI, k));
+  if (Math.abs(k) < 0.03) k = 0.03 * (k < 0 ? -1 : 1);
+  S2.k = k;
+  S2.br = Math.abs(f2.Y(omega2(k, 1)) - py) < Math.abs(f2.Y(omega2(k, 0)) - py) ? 1 : 0;
+}
+c2a.addEventListener('pointerdown', e => { c2a.setPointerCapture(e.pointerId); pick2(e); });
+c2a.addEventListener('pointermove', e => { if (e.buttons) pick2(e); });
+
+function drawS2(dt) {
+  S2.t += dt;
+  const k = S2.k, br = S2.br, om = omega2(k, br), ev = eigen2(k, om), Mb = S2.r;
+  const wTop = Math.sqrt(2 * (1 + 1 / Mb)) * 1.1, gLo = Math.sqrt(2 / Mb), gHi = Math.sqrt(2);
+  const ratio = Math.hypot(ev.Vr, ev.Vi) / Math.hypot(ev.Ur, ev.Ui);
+  let dph = (Math.atan2(ev.Vi, ev.Vr) - Math.atan2(ev.Ui, ev.Ur)) * 180 / Math.PI;
+  dph = ((dph + 540) % 360) - 180;
+  document.getElementById('r2').innerHTML =
+    `<span>${br ? '광학' : '음향'} 가지 &nbsp;ka =</span> ${k.toFixed(2)} <span>&nbsp;ω =</span> ${om.toFixed(3)} <span>&nbsp;|v/u| =</span> ${ratio.toFixed(2)} <span>&nbsp;위상차 =</span> ${dph.toFixed(0)}°`;
+
+  // 분산
+  let { g, w, h } = fit(c2a);
+  const f = frame(g, w, h, [-Math.PI, Math.PI], [0, wTop], { l: 62, r: 10, t: 10, b: 24 });
+  f2 = f;
+  if (gHi - gLo > 0.01) {
+    g.fillStyle = C.bz; g.fillRect(f.x0, f.Y(gHi), f.x1 - f.x0, f.Y(gLo) - f.Y(gHi));
+    text(g, '띠 간격 (허용된 진동 없음)', (f.x0 + f.x1) / 2, (f.Y(gHi) + f.Y(gLo)) / 2 + 4, C.wave, 'center');
+  }
+  [['√(2K/M₁)', gHi, -4], ['√(2K/M₂)', gLo, 12]].forEach(([s, v, dy]) => {
+    g.setLineDash([3, 3]); g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(f.x0, f.Y(v)); g.lineTo(f.x1, f.Y(v)); g.stroke(); g.setLineDash([]);
+    text(g, s, f.x0 - 4, f.Y(v) + (gHi - gLo > 0.15 ? 4 : dy), C.muted, 'right');
+  });
+  text(g, 'ω', f.x0 - 6, f.y1 + 8, C.muted, 'right');
+  [['−π/a', -Math.PI], ['0', 0], ['π/a', Math.PI]].forEach(([s, kk]) => text(g, s, f.X(kk), h - 6, C.muted, 'center'));
+  for (const b of [0, 1]) {
+    g.strokeStyle = b ? C.accent : C.wave; g.lineWidth = 2.2; g.beginPath();
+    for (let i = 0; i <= 300; i++) { const kk = -Math.PI + 2 * Math.PI * i / 300; i ? g.lineTo(f.X(kk), f.Y(omega2(kk, b))) : g.moveTo(f.X(kk), f.Y(omega2(kk, b))); }
+    g.stroke();
+  }
+  text(g, '광학', f.X(-2.6), f.Y(omega2(-2.6, 1)) - 8, C.accent, 'center');
+  text(g, '음향', f.X(-2.6), f.Y(omega2(-2.6, 0)) + 16, C.wave, 'center');
+  atom(g, f.X(k), f.Y(om), 6.5, C.fg);
+
+  // 사슬
+  ({ g, w, h } = fit(document.getElementById('c2b')));
+  const nc = Math.max(5, Math.min(12, Math.floor(w / 46))), cw = w / (nc + 0.5), y = h * 0.5, A = 0.16;
+  const disp = (n, s) => {
+    const th = k * n - om * S2.t, c = Math.cos(th), sn = Math.sin(th);
+    return s ? ev.Vr * c - ev.Vi * sn : ev.Ur * c - ev.Ui * sn;
+  };
+  const pos = [];
+  for (let n = 0; n < nc; n++) {
+    pos.push([(n + 0.25) * cw + A * disp(n, 0) * cw, 0]);
+    pos.push([(n + 0.75) * cw + A * disp(n, 1) * cw, 1]);
+  }
+  const rA = Math.min(9, cw * 0.14), rB = rA * Math.sqrt(Mb) ** 0.6;
+  for (let i = 0; i < pos.length - 1; i++) spring(g, pos[i][0] + (pos[i][1] ? rB : rA), pos[i + 1][0] - (pos[i + 1][1] ? rB : rA), y, C.spring, 3, 3, 1.1);
+  for (let n = 0; n < nc; n++) {
+    const xa = pos[2 * n][0], xb = pos[2 * n + 1][0], xcm = (xa + Mb * xb) / (1 + Mb);
+    g.strokeStyle = C.muted; g.lineWidth = 1.5; g.beginPath(); g.moveTo(xcm, y + 16); g.lineTo(xcm, y + 26); g.stroke();
+  }
+  for (const [x, s] of pos) atom(g, x, y, s ? rB : rA, s ? C.wave : C.accent);
+
+  // 변위
+  ({ g, w, h } = fit(document.getElementById('c2c')));
+  const fp = frame(g, w, h, [0, nc], [-1.15, 1.15], { l: 10, r: 10, t: 8, b: 12 });
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(fp.x0, fp.Y(0)); g.lineTo(fp.x1, fp.Y(0)); g.stroke();
+  for (const s of [0, 1]) {
+    g.strokeStyle = s ? C.wave : C.accent; g.lineWidth = 1.2; g.beginPath();
+    for (let n = 0; n < nc; n++) { const x = fp.X(n + (s ? 0.75 : 0.25)), yy = fp.Y(disp(n, s)); n ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+    g.stroke();
+    for (let n = 0; n < nc; n++) atom(g, fp.X(n + (s ? 0.75 : 0.25)), fp.Y(disp(n, s)), 3.5, s ? C.wave : C.accent);
+  }
+}
+
+// ================================================================== STEP 3
+const S3 = { pol: 'L', ka: 0.9, t: 0 };
+const KT = 0.35;
+const b3L = document.getElementById('b3L'), b3T = document.getElementById('b3T'), k3 = document.getElementById('k3');
+function setPol(p) {
+  S3.pol = p;
+  b3L.classList.toggle('primary', p === 'L'); b3T.classList.toggle('primary', p === 'T');
+  document.getElementById('cap3').textContent = p === 'L'
+    ? '2차원 격자, 종파 LA: 원자가 진행 방향(x)으로 움직임 → 세로줄 간격이 출렁임'
+    : '2차원 격자, 횡파 TA: 원자가 진행 방향에 수직(y)으로 움직임 → 세로줄이 옆으로 미끄러짐';
+}
+b3L.addEventListener('click', () => setPol('L')); b3T.addEventListener('click', () => setPol('T'));
+k3.addEventListener('input', () => { S3.ka = +k3.value; });
+setPol('L');
+
+function drawS3(dt) {
+  S3.t += dt;
+  const k = S3.ka, wL = 2 * Math.abs(Math.sin(k / 2)), wT = Math.sqrt(KT) * wL, om = S3.pol === 'L' ? wL : wT;
+  document.getElementById('r3').innerHTML =
+    `<span>ω_L =</span> ${wL.toFixed(3)}<br><span>ω_T =</span> ${wT.toFixed(3)}<br><span>v_LA =</span> 1.00 <span>&nbsp;v_TA =</span> ${Math.sqrt(KT).toFixed(2)}`;
+
+  let { g, w, h } = fit(document.getElementById('c3a'));
+  const nx = Math.max(8, Math.min(16, Math.floor(w / 30))), ny = 6;
+  const s = Math.min((w - 20) / (nx - 1), (h - 50) / (ny - 1)), ox = (w - s * (nx - 1)) / 2, oy = 40 + (h - 50 - s * (ny - 1)) / 2;
+  const A = 0.28, mid = Math.floor(nx / 2);
+  const P = (i, j) => {
+    const d = A * Math.cos(k * i - om * S3.t);
+    return S3.pol === 'L' ? [ox + (i + d) * s, oy + j * s] : [ox + i * s, oy + (j + d) * s];
+  };
+  g.strokeStyle = C.spring; g.lineWidth = 1;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const [x, y] = P(i, j);
+    if (i < nx - 1) { const [x2, y2] = P(i + 1, j); g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke(); }
+    if (j < ny - 1) { const [x2, y2] = P(i, j + 1); g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke(); }
+  }
+  const r = Math.min(5.5, s * 0.18);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const [x, y] = P(i, j); atom(g, x, y, r, i === mid ? C.accent : C.atom); }
+  arrow(g, ox, 16, ox + 70, 16, C.wave, 2);
+  text(g, '파동 진행 방향 k', ox + 78, 20, C.wave);
+
+  ({ g, w, h } = fit(document.getElementById('c3b')));
+  const f = frame(g, w, h, [0, Math.PI], [0, 2.15], { l: 26, r: 10, t: 10, b: 22 });
+  for (const [kk, col, name] of [[1, C.wave, 'LA'], [KT, C.wave2, 'TA']]) {
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+    for (let i = 0; i <= 200; i++) { const q = Math.PI * i / 200, yy = 2 * Math.sqrt(kk) * Math.sin(q / 2); i ? g.lineTo(f.X(q), f.Y(yy)) : g.moveTo(f.X(q), f.Y(yy)); }
+    g.stroke();
+    text(g, name, f.X(Math.PI) - 4, f.Y(2 * Math.sqrt(kk)) - 6, col, 'right');
+  }
+  atom(g, f.X(k), f.Y(om), 6, C.accent);
+  [['0', 0], ['π/a', Math.PI]].forEach(([t, kk]) => text(g, t, f.X(kk), h - 5, C.muted, 'center'));
+  text(g, 'ω', f.x0 - 6, f.y1 + 8, C.muted, 'right');
+}
+
+// ================================================================== STEP 4
+const M4 = makeModes(10);
+const HB = 0.006;   // ħ (시뮬레이션 단위). ħω_max = 0.012
+const S4 = { nk: new Int32Array(10), sel: 2, t: 0, zp: true, phase: Array.from({ length: 10 }, () => 2 * Math.PI * Math.random()) };
+S4.nk.set([3, 2, 2, 1, 1, 0, 1, 0, 0, 0]);
+const zp4 = document.getElementById('zp4');
+zp4.addEventListener('change', () => { S4.zp = zp4.checked; });
+document.getElementById('b4add').addEventListener('click', () => { if (S4.nk[S4.sel] < 8) S4.nk[S4.sel]++; });
+document.getElementById('b4sub').addEventListener('click', () => { if (S4.nk[S4.sel] > 0) S4.nk[S4.sel]--; });
+document.getElementById('b4clear').addEventListener('click', () => S4.nk.fill(0));
+document.getElementById('b4rand').addEventListener('click', () => {
+  // 진동수가 낮은 모드일수록 포논이 많이 들어가게 (다음 장 Bose-Einstein 분포의 예고)
+  for (let n = 0; n < M4.N; n++) {
+    const q = Math.exp(-M4.w[n] / 0.7);
+    S4.nk[n] = Math.min(8, Math.floor(Math.log(1 - Math.random()) / Math.log(q)));
+  }
+});
+const c4a = document.getElementById('c4a');
+let f4 = null;
+c4a.addEventListener('pointerdown', e => {
+  if (!f4) return;
+  const r = c4a.getBoundingClientRect(), px = e.clientX - r.left;
+  let best = 0, bd = 1e9;
+  for (let n = 0; n < M4.N; n++) { const d = Math.abs(f4.X(M4.k[n]) - px); if (d < bd) { bd = d; best = n; } }
+  S4.sel = best;
+});
+
+function drawS4(dt) {
+  S4.t += dt;
+  const N = M4.N, zp = S4.zp ? 0.5 : 0, n = S4.sel, wmax = 2;
+  let Etot = 0;
+  const Q = new Float64Array(N);
+  for (let m = 0; m < N; m++) {
+    const E = (S4.nk[m] + zp) * HB * M4.w[m];
+    Etot += E;
+    Q[m] = Math.sqrt(2 * E) / M4.w[m] * Math.cos(M4.w[m] * S4.t + S4.phase[m]);
+  }
+  const unit = HB * wmax;
+  document.getElementById('r4').innerHTML =
+    `<span>모드 n =</span> ${n + 1} <span>&nbsp;포논</span> ${S4.nk[n]}<span>개 &nbsp;ħω_n =</span> ${(M4.w[n] / wmax).toFixed(3)} <span>ħω_max</span><br>` +
+    `<span>E_n = (n_k + ${zp ? '½' : '0'})ħω_n =</span> ${((S4.nk[n] + zp) * M4.w[n] / wmax).toFixed(3)} <span>ħω_max &nbsp;격자 전체 =</span> ${(Etot / unit).toFixed(3)} <span>ħω_max</span>`;
+
+  // 포논 개수
+  let { g, w, h } = fit(c4a);
+  const f = frame(g, w, h, [0, Math.PI], [0, 9], { l: 10, r: 10, t: 10, b: 30 });
+  f4 = f;
+  g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath();
+  for (let i = 0; i <= 100; i++) { const q = Math.PI * i / 100, yy = 4.5 * Math.sin(q / 2); i ? g.lineTo(f.X(q), f.Y(yy)) : g.moveTo(f.X(q), f.Y(yy)); }
+  g.stroke();
+  const colW = (f.x1 - f.x0) / (N + 1);
+  for (let m = 0; m < N; m++) {
+    const x = f.X(M4.k[m]);
+    if (m === n) { g.fillStyle = C.bz; g.fillRect(x - colW / 2, f.y1, colW, f.y0 - f.y1); }
+    for (let q = 0; q < S4.nk[m]; q++) atom(g, x, f.Y(q + 0.5), Math.min(6, colW * 0.3), m === n ? C.accent : C.wave);
+    text(g, String(m + 1), x, f.y0 + 12, m === n ? C.fg : C.muted, 'center');
+  }
+  text(g, '모드 n (k가 커지는 순서) →', f.x1, h - 3, C.muted, 'right');
+  text(g, '회색 선 = ω(k) 모양', f.x0 + 2, f.y1 + 8, C.muted);
+
+  // 에너지 사다리
+  ({ g, w, h } = fit(document.getElementById('c4b')));
+  const wn = M4.w[n], Qmax = Math.sqrt(2 * 7 * unit) / 0.6;
+  const fl = frame(g, w, h, [-Qmax, Qmax], [0, 5.2], { l: 28, r: 8, t: 10, b: 18 });
+  const Uq = q => 0.5 * wn * wn * q * q / unit;
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  let pen = false;
+  for (let i = 0; i <= 200; i++) {
+    const q = -Qmax + 2 * Qmax * i / 200, yy = Uq(q);
+    if (yy > 5.2) { pen = false; continue; }
+    pen ? g.lineTo(fl.X(q), fl.Y(yy)) : g.moveTo(fl.X(q), fl.Y(yy)); pen = true;
+  }
+  g.stroke();
+  for (let m = 0; m < 20; m++) {
+    const En = (m + 0.5) * wn / wmax;
+    if (En > 5.2) break;
+    const qw = Math.sqrt(2 * En * unit) / wn, cur = m === S4.nk[n];
+    g.strokeStyle = cur ? C.accent : C.line; g.lineWidth = cur ? 3 : 1.2;
+    g.beginPath(); g.moveTo(fl.X(Math.max(-qw, -Qmax)), fl.Y(En)); g.lineTo(fl.X(Math.min(qw, Qmax)), fl.Y(En)); g.stroke();
+    if (cur) text(g, `n_k = ${m}`, fl.X(Math.min(qw, Qmax)) - 2, fl.Y(En) - 5, C.accent, 'right');
+  }
+  [0, 1, 2, 3, 4, 5].forEach(v => text(g, String(v), fl.x0 - 5, fl.Y(v) + 4, C.muted, 'right'));
+  text(g, `간격 ħω_n = ${(wn / wmax).toFixed(2)}`, fl.x0 + 4, fl.y0 - 6, C.fg);
+  text(g, '정규 좌표 Q', fl.x1, h - 3, C.muted, 'right');
+
+  // 사슬
+  ({ g, w, h } = fit(document.getElementById('c4c')));
+  const sp = w / (N + 1), y = h * 0.55, r = Math.min(8, sp * 0.26), ex = 2.5;
+  const u = j => { let s = 0; for (let m = 0; m < N; m++) s += M4.S[m][j] * Q[m]; return Math.max(-0.45, Math.min(0.45, ex * s)); };
+  const X = j => (j + 1) * sp + (j >= 0 && j < N ? u(j) : 0) * sp;
+  wall(g, X(-1), y, 40, -1); wall(g, X(N), y, 40, 1);
+  for (let j = -1; j < N; j++) spring(g, X(j) + (j >= 0 ? r : 0), X(j + 1) - (j + 1 < N ? r : 0), y, C.spring, 4, 4, 1.2);
+  for (let j = 0; j < N; j++) atom(g, X(j), y, r, C.atom);
+}
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs({
+  s2: a => { if (a === 'ac0') { S2.k = 0.25; S2.br = 0; } if (a === 'kpi') { S2.k = Math.PI - 0.001; } },
+  s3: a => setPol(a),
+  s4: a => { if (a === 'zp') { zp4.checked = true; S4.zp = true; } },
+});
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

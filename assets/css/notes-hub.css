@@ -1,0 +1,390 @@
+/* Notes Hub
+   Card index + embedded viewer for standalone HTML notes.
+   Colors follow the blog theme variables; the accent matches the notes. */
+
+.nh {
+  --nh-accent: #d9480f;
+  --nh-accent-soft: rgba(217, 72, 15, 0.08);
+  --nh-line: var(--btn-border-color, #e9ecef);
+  --nh-panel: var(--card-bg, #fff);
+  --nh-muted: var(--text-muted-color, #757575);
+  --nh-fg: var(--heading-color, #2a2a2a);
+  --nh-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --nh-radius: 10px;
+  margin: 2rem 0 1rem;
+}
+
+html[data-mode="dark"] .nh {
+  --nh-accent: #ff8a50;
+  --nh-accent-soft: rgba(255, 138, 80, 0.1);
+  --nh-line: rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode]) .nh {
+    --nh-accent: #ff8a50;
+    --nh-accent-soft: rgba(255, 138, 80, 0.1);
+    --nh-line: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* --- Header --- */
+
+.nh-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--nh-line);
+}
+
+.nh-course {
+  font: 600 0.78rem/1.4 var(--nh-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nh-accent);
+}
+
+.nh-stats {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--nh-muted);
+}
+
+/* --- Parts and cards --- */
+
+.nh-part + .nh-part { margin-top: 2rem; }
+
+.nh-part-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.nh-part-label {
+  font: 600 0.72rem/1 var(--nh-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nh-muted);
+}
+
+.nh-part-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--nh-fg);
+}
+
+.nh-part-range {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--nh-muted);
+}
+
+.content ol.nh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.content ol.nh-grid > li {
+  margin: 0;
+  padding: 0;
+}
+
+.content a.nh-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1rem 1.1rem 0.95rem;
+  color: inherit;
+  text-decoration: none;
+  background: var(--nh-panel);
+  border: 1px solid var(--nh-line);
+  border-radius: var(--nh-radius);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.content a.nh-card:hover,
+.content a.nh-card:focus-visible {
+  color: inherit !important;
+  border-color: var(--nh-accent);
+  border-bottom: 1px solid var(--nh-accent);
+  box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.content a.nh-card[aria-current="true"] {
+  border-color: var(--nh-accent);
+  box-shadow: inset 3px 0 0 var(--nh-accent);
+  background: linear-gradient(var(--nh-accent-soft), var(--nh-accent-soft)), var(--nh-panel);
+}
+
+.nh-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nh-no {
+  font: 600 1.35rem/1 var(--nh-mono);
+  color: var(--nh-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.nh-lecture {
+  font: 0.72rem/1 var(--nh-mono);
+  color: var(--nh-muted);
+  letter-spacing: 0.03em;
+}
+
+.nh-title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--nh-fg);
+}
+
+.nh-summary {
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--nh-muted);
+  word-break: keep-all;
+}
+
+.nh-figs {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  font: 0.72rem/1.3 var(--nh-mono);
+  color: var(--nh-muted);
+  opacity: 0.85;
+}
+
+.nh-figs { min-height: 1.65em; } /* filled after load; reserve the line to avoid layout shift */
+
+/* --- Viewer --- */
+
+.nh-viewer {
+  margin-top: 2.5rem;
+  scroll-margin-top: 5rem;
+}
+
+.nh-viewer[hidden] { display: none; }
+
+.nh-bar {
+  position: sticky;
+  top: 64px; /* custom navbar height */
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--main-bg, #fff);
+  border: 1px solid var(--nh-line);
+  border-radius: var(--nh-radius) var(--nh-radius) 0 0;
+}
+
+.nh-current {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0 0.25rem;
+  overflow: hidden;
+}
+
+.nh-current-no {
+  flex: none;
+  font: 600 0.82rem/1 var(--nh-mono);
+  color: var(--nh-accent);
+}
+
+.nh-current-title {
+  font-weight: 600;
+  color: var(--nh-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nh-sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--nh-line);
+}
+
+.content .nh-btn,
+.nh-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--nh-muted);
+  background: transparent;
+  border: 1px solid var(--nh-line);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.content a.nh-btn { border-bottom: 1px solid var(--nh-line); }
+
+.content .nh-btn:hover:not(:disabled),
+.nh-btn:hover:not(:disabled) {
+  color: var(--nh-accent) !important;
+  border-color: var(--nh-accent);
+}
+
+.nh-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.nh-btn[hidden] { display: none; }
+
+.nh-steprow {
+  flex-basis: 100%;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-top: 0.5rem;
+  margin-top: 0.1rem;
+  border-top: 1px dashed var(--nh-line);
+}
+
+.nh-steprow::-webkit-scrollbar { display: none; }
+.nh-steprow[hidden] { display: none; }
+
+.nh-step {
+  flex: none;
+  font-size: 0.78rem;
+  line-height: 1;
+  color: var(--nh-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.nh-step b {
+  font: 600 0.72rem var(--nh-mono);
+  margin-right: 0.35rem;
+  color: var(--nh-accent);
+}
+
+.nh-step:hover { color: var(--nh-fg); }
+
+.nh-step.is-active {
+  color: var(--nh-fg);
+  background: var(--nh-accent-soft);
+  border-color: var(--nh-accent-soft);
+}
+
+.nh-frame {
+  position: relative;
+  border: 1px solid var(--nh-line);
+  border-top: 0;
+  border-radius: 0 0 var(--nh-radius) var(--nh-radius);
+  overflow: hidden;
+  min-height: 24rem;
+}
+
+.nh-iframe {
+  display: block;
+  width: 100%;
+  height: 24rem;
+  border: 0;
+  transition: opacity 0.25s ease;
+}
+
+.nh-loading {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.6rem;
+  padding-top: 8rem;
+  font-size: 0.85rem;
+  color: var(--nh-muted);
+  background: var(--main-bg, #fff);
+}
+
+.nh-loading span {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--nh-line);
+  border-top-color: var(--nh-accent);
+  border-radius: 50%;
+  animation: nh-spin 0.8s linear infinite;
+}
+
+.nh-viewer.is-loading .nh-loading { display: flex; }
+.nh-viewer.is-loading .nh-iframe { opacity: 0; }
+
+@keyframes nh-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fullscreen: toolbar on top, notes scroll inside */
+
+.nh-viewer.is-full {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background: var(--main-bg, #fff);
+}
+
+.nh-viewer.is-full .nh-bar {
+  position: static;
+  border-radius: 0;
+  border-width: 0 0 1px;
+}
+
+.nh-viewer.is-full .nh-frame {
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.nh-viewer.is-full .nh-iframe {
+  height: 100% !important;
+}
+
+/* Wide screens: let the viewer break out of the text column so the notes
+   keep their two-column (derivation | figure) layout. */
+@media (min-width: 1100px) {
+  .nh-viewer:not(.is-full) {
+    width: min(1180px, calc(100vw - 4rem));
+    margin-left: calc(50% - min(590px, 50vw - 2rem));
+  }
+}
+
+@media (max-width: 576px) {
+  .nh-bar { padding: 0.5rem; }
+  .nh-sep { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content a.nh-card { transition: none; }
+  .content a.nh-card:hover { transform: none; }
+}

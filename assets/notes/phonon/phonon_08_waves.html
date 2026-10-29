@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파동으로 보는 운반자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 11 Energy transfer by waves</div>
+  <h1>8장. 운반자를 파동으로 보기</h1>
+  <p>7장까지는 포논과 전자를 위치와 속도를 가진 입자로 보고 BTE로 다뤘습니다. 이번 장에서는 같은 운반자를 파동으로 봅니다. 입자가 사실 파동 묶음이라는 것, 입자는 확률을 더하고 파동은 진폭을 더한다는 것, 그 차이가 언제 중요해지는지(길이 척도), 그리고 파동이 경계면을 만나면 얼마나 반사되는지(임피던스)를 따라갑니다.</p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <p class="legend-terms">색 약속: <span class="tV">파동 / 파장 λ</span><span class="tC">지금 보는 것 (결과)</span><span class="tTau">경계 / 두 번째 물질</span><span class="tGrad">평균 자유 행로 Λ</span></p>
+  <nav class="toc" aria-label="단계">
+    <a href="phonon_07_electrons.html">← 7장</a>
+    <a href="#s1"><b>1</b>파동 묶음</a>
+    <a href="#s2"><b>2</b>확률과 진폭</a>
+    <a href="#s3"><b>3</b>길이 척도</a>
+    <a href="#s4"><b>4</b>경계면과 임피던스</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1 · Lecture 11 Wave packets</div>
+    <h2>운반자 = 파동 묶음</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>파수 k가 하나뿐인 평면파는 어디에나 똑같이 퍼져 있어서 "어디 있는지"가 없습니다. k가 조금씩 다른 파동을 여러 개 겹치면 한곳에서만 마루가 맞아 커지고, 나머지에서는 서로 지워집니다. 그 덩어리가 우리가 입자라고 부르던 것입니다.</p>
+      <p class="try">해 보기: 겹친 개수를 1 → 3 → 9 → 무수히로 바꿔 보세요. 그다음 Δk를 키워 보세요. 묶음 폭 Δx는 어떻게 되나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-fig="one" data-hl="c1a" data-act="n1">
+          <div class="d-math">\(\psi = A\,e^{i(kx-\omega t)},\qquad |\psi|^2 = |A|^2\)</div>
+          <div class="d-why">k가 정확히 하나인 평면파. 진폭이 어디서나 같아서 위치를 말할 수 없습니다.</div>
+          <div class="d-look">겹친 개수를 1로 바꿨습니다. 아래 줄이 끝없이 같은 모양입니다.</div>
+        </div>
+        <div class="d-step" data-fig="few" data-hl="c1a" data-act="n3">
+          <div class="d-math">\(\psi(x,t) = \displaystyle\sum_k A(k)\,e^{i(kx-\omega t)}\)</div>
+          <div class="d-why">k가 조금씩 다른 파동을 더합니다. 마루끼리 맞는 곳은 커지고, 어긋난 곳은 작아집니다.</div>
+          <div class="d-look">3개를 더했습니다. 커진 곳이 생기지만 일정한 간격으로 되풀이됩니다(맥놀이).</div>
+        </div>
+        <div class="d-step" data-fig="many" data-hl="c1a" data-act="ninf">
+          <div class="d-math">\(A(k) \propto e^{-(k-k_0)^2/4\Delta k^2} \;\Rightarrow\; |\psi|^2 \propto e^{-x^2/2\Delta x^2}\)</div>
+          <div class="d-why">Δk 폭 안의 k를 빽빽이 더하면 마루가 모두 맞는 곳이 하나만 남습니다. Gaussian 모양으로 섞으면 결과도 Gaussian입니다.</div>
+          <div class="d-look">무수히로 바꿨습니다. 주황 점선 = 묶음의 테두리(envelope), 주황 세로선 = 모든 파동의 마루가 맞는 곳.</div>
+        </div>
+        <div class="d-step key" data-fig="dx" data-hl="c1a">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\Delta x\,\Delta k \ge \tfrac12\)</div>
+          <div class="d-why">Gaussian이면 등호(Δx = 1/2Δk)가 성립합니다. k를 넓게 섞을수록(Δk↑) 위치가 좁아지고(Δx↓), 반대도 마찬가지입니다. 위치와 파수를 동시에 정확히 정할 수는 없습니다.</div>
+          <div class="d-look">Δk 슬라이더를 움직이며 표시줄의 Δx·Δk를 보세요. 항상 0.50입니다.</div>
+        </div>
+        <div class="d-step" data-fig="vg" data-hl="c1a">
+          <div class="d-math">\(v_g = \dfrac{\partial \omega}{\partial k}\)</div>
+          <div class="d-why">묶음은 군속도로 움직이고(1장 STEP 4의 v<sub>g</sub>), 에너지도 이 속도로 실려 갑니다. 이 묶음이 BTE가 다루던 "입자"입니다.</div>
+          <div class="d-look">주황 세로선(묶음 중심)이 움직이는 속도입니다. 이 그림은 분산이 없는 경우(ω = vk)라 묶음 모양이 그대로 유지됩니다.</div>
+        </div>
+        <div class="d-step" data-fig="bte" data-hl="c1a">
+          <div class="d-math">\(\lambda \ll \Delta x \ll D,\ \Lambda\)</div>
+          <div class="d-why">BTE의 f(r, k, t)는 위치 r과 파수 k를 둘 다 알아야 쓸 수 있습니다. 묶음이 파장보다 충분히 길어야 k가 정해지고(λ ≪ Δx), 시료 크기 D와 평균 자유 행로 Λ보다는 짧아야 위치가 정해집니다.</div>
+          <div class="d-look">표시줄의 Δx/λ. Δk를 키우면 묶음이 파장 몇 개짜리로 줄어 k가 흐려집니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>입자는 파동 묶음입니다. 묶음이 파장보다 길고 시료와 평균 자유 행로보다 짧을 때만 "위치와 파수를 함께 가진 입자"로 볼 수 있고, 그때 BTE가 맞습니다. 이 조건이 깨지는 크기에서는 파동 그림이 필요합니다(STEP 3).</p>
+        <details><summary>확인 질문: Δk를 두 배로 하면 묶음 폭 Δx는?</summary><p>절반이 됩니다(Δx = 1/2Δk). 위치를 좁히려면 더 넓은 범위의 k를 섞어야 합니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">위: 겹치는 파동 중 세 개 (k가 가장 작은 것, 가운데, 가장 큰 것). 아래: 모두 더한 결과 ψ. <span style="color:var(--accent)">┃ 마루가 모두 맞는 곳, ┅ 묶음 테두리</span></p><canvas id="c1a" style="height:270px"></canvas></div>
+    <div class="card controls">
+      <div class="controls">겹친 개수 <button data-n="1">1</button><button data-n="3">3</button><button data-n="9">9</button><button class="primary" data-n="inf">무수히</button></div>
+      <label>Δk (파수 폭) <input type="range" id="k1" min="0.08" max="0.8" step="0.01" value="0.15"></label>
+      <div class="readout" id="r1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2 · Lecture 11 Probabilities vs. amplitudes</div>
+    <h2>입자는 확률을 더하고, 파동은 진폭을 더한다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>출발점에서 검출기까지 길이 두 개 있습니다. 입자 그림에서는 각 길로 올 확률을 더하면 끝입니다(P = P₁ + P₂). 파동 그림에서는 두 길로 온 파동의 진폭을 먼저 더하고 나서 제곱합니다. 그래서 두 파동의 위상 차 Δφ에 따라 세기가 4배가 되기도 하고 0이 되기도 합니다.</p>
+      <p class="try">해 보기: Δφ를 0에서 π로 옮겨 보세요. 그다음 "위상 무작위"를 눌러, 위상 차가 매번 제멋대로일 때 평균이 어디로 가는지 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-fig="part" data-hl="c2b">
+          <div class="d-math">\(P = P_1 + P_2\)</div>
+          <div class="d-why">BTE는 분포 f, 즉 확률(점유)을 다룹니다. 두 길로 오는 몫을 그냥 더합니다.</div>
+          <div class="d-look">회색 막대 = 1 + 1 = 2. Δφ와 상관없습니다.</div>
+        </div>
+        <div class="d-step" data-fig="amp" data-hl="c2a">
+          <div class="d-math">\(\psi = \psi_1 + \psi_2\)</div>
+          <div class="d-why">파동은 진폭(부호와 위상이 있는 값)을 먼저 더합니다.</div>
+          <div class="d-look">아래 줄 = 위 두 줄을 점마다 더한 것.</div>
+        </div>
+        <div class="d-step key" data-fig="cross" data-hl="c2a c2b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(|\psi_1+\psi_2|^2 = |\psi_1|^2 + |\psi_2|^2 + \htmlClass{tC}{2\,\mathrm{Re}(\psi_1\psi_2^*)}\)</div>
+          <div class="d-why">앞의 두 항은 입자 그림과 같고, 셋째 항(간섭 항)은 파동에만 있습니다. 두 세기가 1로 같으면 2 + 2cos Δφ입니다.</div>
+          <div class="d-look">파랑 막대 = 회색 막대 + 간섭 항.</div>
+        </div>
+        <div class="d-step" data-fig="in" data-hl="c2a c2b" data-act="phi0">
+          <div class="d-math">\(\Delta\varphi = 0:\quad |\psi_1+\psi_2|^2 = 4|\psi|^2\)</div>
+          <div class="d-why">마루와 마루가 만나 진폭이 두 배, 세기는 네 배입니다.</div>
+          <div class="d-look">Δφ = 0으로 바꿨습니다. 파랑 막대가 4입니다.</div>
+        </div>
+        <div class="d-step" data-fig="out" data-hl="c2a c2b" data-act="phipi">
+          <div class="d-math">\(\Delta\varphi = \pi:\quad |\psi_1+\psi_2|^2 = 0\)</div>
+          <div class="d-why">마루와 골이 만나 지워집니다. 확률은 음수가 될 수 없어서 더하기만 하는 입자 그림으로는 이렇게 줄어드는 것을 만들 수 없습니다.</div>
+          <div class="d-look">Δφ = π로 바꿨습니다. 아래 줄이 평평하고 파랑 막대가 0입니다.</div>
+        </div>
+        <div class="d-step" data-fig="rand" data-hl="c2b" data-act="rand">
+          <div class="d-math">\(\langle \cos\Delta\varphi\rangle = 0 \;\Rightarrow\; \langle|\psi_1+\psi_2|^2\rangle = P_1 + P_2\)</div>
+          <div class="d-why">위상 차가 매번 무작위면 간섭 항의 평균이 0이 되어 입자 그림이 돌아옵니다. 위상이 쉽게 흐트러지는 큰 시료나 높은 온도에서 BTE가 맞는 이유입니다.</div>
+          <div class="d-look">위상 무작위로 바꿨습니다. 주황 막대(평균)가 회색 막대 2로 다가갑니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>입자 그림과 파동 그림의 차이는 간섭 항 하나입니다. 위상이 유지되면(결맞음, coherent) 간섭 항이 살아 있어 파동으로 봐야 하고, 위상이 무작위가 되면 그 항이 사라져 확률을 더하는 BTE로 충분합니다.</p>
+        <details><summary>확인 질문: BTE로 반사 방지 코팅(λ/4 막)을 설명할 수 없는 이유는?</summary><p>코팅은 막의 앞뒤 두 경계면에서 반사된 파동이 Δφ = π로 만나 지워지는 간섭 효과입니다. 반사 확률만 더하면 MgF₂ 막의 반사율은 두께와 상관없이 약 2.7%로 일정합니다. 실제로는 λ/4 두께에서 1.4%, λ/2 두께에서 다시 4%로 두께에 따라 오르내리는데, 이 두께 의존은 진폭을 더해야만 나옵니다(9장 STEP 1).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">왼쪽: 두 길. 오른쪽: 검출기 근처의 파동. 위 두 줄 = 길 1, 길 2로 온 ψ₁, ψ₂, 아래 = 실제로 도착하는 합 ψ₁ + ψ₂</p><canvas id="c2a" style="height:220px"></canvas></div>
+    <div class="card"><p class="cap">검출기에 닿는 세기 (|ψ₁|² = |ψ₂|² = 1). <span style="color:var(--muted)">■ 입자 그림</span>, <span style="color:var(--wave)">■ 파동 그림</span>, <span style="color:var(--accent)">■ 위상 무작위일 때의 평균</span></p><canvas id="c2b" style="height:150px"></canvas></div>
+    <div class="card controls">
+      <div class="controls"><button class="primary" id="b2f">위상 고정</button><button id="b2r">위상 무작위</button></div>
+      <label>위상 차 Δφ <input type="range" id="p2" min="0" max="6.2832" step="0.01" value="1.0"></label>
+      <div class="readout" id="r2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3 · Lecture 11 Length scales and transport regimes</div>
+    <h2>언제 파동으로 봐야 하나: 길이 척도</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>같은 운반자라도 시료 크기 D를 무엇과 비교하느냐에 따라 보는 법이 달라집니다. 파장 λ와 비교하면 파동 효과(간섭, 회절)가 보이는지를, 평균 자유 행로 Λ와 비교하면 산란 없이 지나가는지(탄도)를 알 수 있습니다. 아래 그림은 Lecture 11의 길이 척도 그림에 시료 크기 D 선을 더한 것입니다.</p>
+      <p class="try">해 보기: D를 10 nm(7장 구리 배선)에 두고 전자 줄을 읽어 보세요. 탄도인가요? 파동 효과가 있나요? 그다음 D를 1 nm 근처로 줄여 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-fig="lam" data-hl="c3a">
+          <div class="d-math">\(D \sim \htmlClass{tV}{\lambda}\text{: 회절, 간섭, 갇힘}\)</div>
+          <div class="d-why">파동은 자기 파장 정도 크기의 구조부터 "알아봅니다". D ≫ λ이면 경계는 그냥 벽(산란체)입니다.</div>
+          <div class="d-look">파랑 ▲(λ)와 주황 D 선 사이의 거리를 보세요. 로그 축이라 한 칸이 10배입니다.</div>
+        </div>
+        <div class="d-step" data-fig="mfp" data-hl="c3a">
+          <div class="d-math">\(D < \htmlClass{tGrad}{\Lambda}\text{: 탄도 (ballistic)}\)</div>
+          <div class="d-why">6장 STEP 1과 같습니다. 산란 없이 시료를 건너갑니다.</div>
+          <div class="d-look">빨강 ●(Λ)가 D 선보다 오른쪽이면 탄도입니다.</div>
+        </div>
+        <div class="d-step" data-fig="lphi" data-hl="c3a">
+          <div class="d-math">\(D < L_\varphi\text{: 결맞음 (coherent)}\)</div>
+          <div class="d-why">L<sub>φ</sub> = 위상이 유지되는 거리. 금속 전자는 1 K에서 μm 정도이고 상온에서는 짧습니다. 포논과 열복사는 스펙트럼이 넓어서 L<sub>φ</sub> ~ λ입니다 (Lecture 11 표). 엄밀히는 이 짧은 길이는 스펙트럼 폭이 정하는 결맞음 길이 ℓ<sub>c</sub>이고, 10장 STEP 2에서 산란이 정하는 L<sub>φ</sub>와 구분합니다.</div>
+          <div class="d-look">그림에는 그리지 않았습니다.</div>
+        </div>
+        <div class="d-step key" data-fig="need" data-hl="c3a">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\text{파동 그림이 필요한 조건: } D \sim \lambda \;\text{그리고}\; D < L_\varphi\)</div>
+          <div class="d-why">STEP 2의 간섭 항이 살아 있으려면 구조가 파장 정도이고, 그 안에서 위상이 유지되어야 합니다. 탄도라고 해서 결맞는 것은 아닙니다(ballistic ≠ coherent). 부딪히지 않고 지나가도 위상 기억은 잃을 수 있습니다.</div>
+          <div class="d-look">그림 아래 표시줄의 판정 문장을 보세요.</div>
+        </div>
+        <div class="d-step" data-fig="cu" data-hl="c3a" data-act="cu">
+          <div class="d-math">\(\lambda_F = 2\pi/k_F \approx 0.46\,\text{nm} \ll D \approx 10\,\text{nm} < \Lambda \approx 40\,\text{nm}\)</div>
+          <div class="d-why">7장의 구리 배선입니다. 탄도이지만 회절은 없어 경계는 산란체일 뿐이므로, 경계 산란을 넣은 BTE(7장 STEP 4의 모형)가 여전히 맞습니다.</div>
+          <div class="d-look">D를 10 nm로 옮겼습니다. 표시줄의 전자: "D ≫ λ → 입자 그림 · D &lt; Λ → 탄도".</div>
+        </div>
+        <div class="d-step" data-fig="where" data-hl="c3a" data-act="um">
+          <div class="d-math">\(\text{반도체 전자 } \lambda \sim 10\text{–}50\,\text{nm},\quad \text{열복사 } \lambda \sim 10\,\mu\text{m}\)</div>
+          <div class="d-why">금속은 λ<sub>F</sub>가 너무 짧아 파동 효과가 드뭅니다. 반도체 전자(양자 우물), 포논의 긴 파장 모드(초격자), 열복사(μm 크기 구조)가 파동 그림이 필요한 대표적인 경우입니다.</div>
+          <div class="d-look">D를 1 μm로 옮겼습니다. 표시줄의 광자가 "D ~ λ"가 됩니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>운반자를 입자로 볼지 파동으로 볼지는 물질이 아니라 길이의 비교가 정합니다. D ≫ λ이거나 위상이 금방 흐트러지면 BTE로 충분하고, D ~ λ이면서 위상이 유지되면 파동으로 봐야 합니다.</p>
+        <details><summary>확인 질문: 10 nm 구리 배선은 탄도인데 왜 파동 그림이 필요 없나요?</summary><p>λ<sub>F</sub> ≈ 0.46 nm가 배선 폭보다 20배 이상 작아 회절이나 간섭이 생기지 않습니다. 경계는 전자를 흩뜨리는 벽일 뿐이라 BTE에 경계 산란을 넣으면 됩니다(7장 STEP 4).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">길이 척도 (로그 축, Lecture 11). <span style="color:var(--wave)">▲ 파장 λ</span>, <span style="color:var(--hot)">● 평균 자유 행로 Λ</span>, 막대 = 범위, <span style="color:var(--accent)">┃ 시료 크기 D</span></p><canvas id="c3a" style="height:230px"></canvas></div>
+    <div class="card controls">
+      <label>시료 크기 D <input type="range" id="d3" min="-1" max="4" step="0.01" value="2"></label>
+      <div class="readout" id="r3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4 · Lecture 11 Impedance, plane wave at the interface</div>
+    <h2>경계면: 임피던스가 다르면 반사된다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>1장의 원자 사슬을 가운데서 둘로 나누고, 오른쪽 원자의 질량만 바꿨습니다. 왼쪽에서 파동 묶음(STEP 1)을 보내면 경계에서 일부는 돌아오고 일부는 넘어갑니다. 얼마나 돌아오는지는 두 쪽의 "임피던스" Z가 얼마나 다른지로만 정해집니다.</p>
+      <p class="try">해 보기: 질량비를 1로 두면 무엇이 반사되나요? 오른쪽을 무겁게(4) 하면 돌아오는 묶음이 뒤집히고, 가볍게(0.1) 하면 넘어간 묶음이 오히려 더 높아집니다. 그런데 왜 에너지는 덜 넘어갈까요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-fig="flux" data-hl="c4a">
+          <div class="d-math">\(J = \tfrac12\,Z\,\omega^2 u_0^2,\qquad Z = \rho v\)</div>
+          <div class="d-why">음파 평면파의 에너지 흐름(음향 Poynting 벡터). 흐름 = (임피던스) × |진폭|². 전자 J = |A|²ħk/m, 빛 S = n|E₀|²/2Z₀도 같은 모양입니다 (Lecture 11).</div>
+          <div class="d-look">묶음의 높이(진폭)와 물질의 Z가 함께 에너지를 정합니다.</div>
+        </div>
+        <div class="d-step" data-fig="z" data-hl="c4a">
+          <div class="d-math">\(\rho = \dfrac{M}{a},\quad v = a\sqrt{K/M} \;\Rightarrow\; Z = \sqrt{KM}\)</div>
+          <div class="d-why">1장 사슬의 음속을 넣으면 사슬의 임피던스가 나옵니다. 무거운 사슬은 느리지만 Z는 큽니다.</div>
+          <div class="d-look">오른쪽이 무거우면 넘어간 묶음이 느리고 좁아집니다.</div>
+        </div>
+        <div class="d-step" data-fig="bc" data-hl="c4a">
+          <div class="d-math">\(u_i + u_r = u_t,\qquad Z_1(u_i - u_r) = Z_2\,u_t\)</div>
+          <div class="d-why">경계에서 변위가 이어지고(연속), 양쪽이 미는 힘이 같아야 합니다. 전자에서는 ψ와 ψ′, 빛에서는 E와 H의 접선 성분이 이어지는 것이 같은 역할입니다.</div>
+          <div class="d-look">i = 들어오는 묶음, r = 돌아오는 묶음, t = 넘어가는 묶음.</div>
+        </div>
+        <div class="d-step" data-fig="rt" data-hl="c4a" data-act="heavy">
+          <div class="d-math">\(r = \dfrac{Z_1-Z_2}{Z_1+Z_2},\qquad t = \dfrac{2Z_1}{Z_1+Z_2}\)</div>
+          <div class="d-why">진폭의 반사·투과 계수. Z₂ > Z₁(무거운 쪽)이면 r &lt; 0이라 돌아오는 묶음이 뒤집힙니다.</div>
+          <div class="d-look">M₂ = 4M₁(Z₂ = 2Z₁)로 바꿨습니다. r = −1/3이라 돌아오는 묶음이 아래로 뒤집혀 있습니다.</div>
+        </div>
+        <div class="d-step key" data-fig="RT" data-hl="c4a c4b" data-act="light">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(R = r^2 = \left(\dfrac{Z_1-Z_2}{Z_1+Z_2}\right)^2,\qquad T = \dfrac{Z_2}{Z_1}\,t^2 = \dfrac{4Z_1Z_2}{(Z_1+Z_2)^2}\)</div>
+          <div class="d-why">R과 T는 진폭의 비가 아니라 에너지 흐름의 비입니다. 흐름 = Z × 진폭²이므로 투과 쪽에는 Z₂/Z₁이 곱해집니다. R + T = 1입니다.</div>
+          <div class="d-look">M₂ = 0.1M₁로 바꿨습니다. 넘어간 묶음은 t = 1.52배로 더 높지만 Z₂가 작아서 에너지는 73%만 넘어갑니다(R = 0.27, Au/Si 종파의 R과 비슷).</div>
+        </div>
+        <div class="d-step" data-fig="same" data-hl="c4b">
+          <div class="d-math">\(Z_\text{전자} = \hbar k/m,\qquad Z_\text{빛} \propto n,\qquad Z_\text{음파} = \rho v\)</div>
+          <div class="d-why">같은 식, 다른 운반자. 임피던스가 같으면 모두 투과하고, 많이 다르면 많이 반사됩니다. 공기/유리(n = 1.5)는 R ≈ 4%, 전자의 퍼텐셜 계단은 R = ((k₁ − k₂)/(k₁ + k₂))²입니다. 다음 강의(Lecture 12)의 경계 열저항이 바로 이 T로 포논의 경계 투과를 계산합니다.</div>
+          <div class="d-look">아래 그래프의 곡선은 Z₂/Z₁과 Z₁/Z₂에 대해 대칭입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>경계면에서 얼마나 반사되는지는 두 물질의 임피던스 차이로 정해지고, 전자·빛·포논 모두 같은 식을 따릅니다. 진폭이 커졌다고 에너지가 늘어난 것은 아닙니다. 에너지 흐름은 Z × 진폭²입니다.</p>
+        <details><summary>확인 질문: Z₂/Z₁ = 2일 때와 1/2일 때 R은?</summary><p>둘 다 (1/3)² ≈ 0.11로 같습니다. 돌아오는 묶음의 부호만 다릅니다(무거운 쪽으로 갈 때 뒤집힘).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">원자 사슬 (세로 = 변위). 왼쪽 = 물질 1 (M₁), <span style="color:var(--wave2)">오른쪽 = 물질 2 (M₂)</span>, 점 크기 ∝ 질량. 아래 막대 = 경계 왼쪽/오른쪽에 있는 에너지, 검은 눈금 = 식의 R, T</p><canvas id="c4a" style="height:250px"></canvas></div>
+    <div class="card"><p class="cap">에너지 반사율 R vs Z₂/Z₁ (가로 로그). 실선 = 식, <span style="color:var(--accent)">●</span> = 시뮬레이션에서 잰 값</p><canvas id="c4b" style="height:170px"></canvas></div>
+    <div class="card controls">
+      <div class="controls"><button id="b4">다시 보내기</button></div>
+      <label>질량비 M₂/M₁ <input type="range" id="m4" min="-1" max="1" step="0.01" value="0.602"></label>
+      <div class="readout" id="r4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 정리 -->
+<section class="summary" id="sum">
+  <h2>정리: 입자 그림과 파동 그림 (Lecture 11)</h2>
+  <p>같은 운반자를 두 가지로 볼 수 있습니다. 둘을 가르는 것은 간섭 항이고, 그 항이 살아 있는지는 길이의 비교가 정합니다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>입자 그림 (BTE)</th><th>파동 그림</th></tr></thead>
+      <tbody>
+        <tr><th>운반자</th><td>위치와 파수를 함께 가진 점, f(r, k, t)</td><td>파동 묶음, 위상까지 기억 (STEP 1)</td></tr>
+        <tr><th>두 길을 합칠 때</th><td>확률을 더함</td><td>진폭을 더함, 간섭 항 2Re(ψ₁ψ₂*) (STEP 2)</td></tr>
+        <tr><th>맞는 조건</th><td>D ≫ λ, 또는 위상이 흐트러짐</td><td>D ~ λ 그리고 D &lt; L<sub>φ</sub> (STEP 3)</td></tr>
+        <tr><th>경계면에서</th><td>반사 확률을 가진 산란체</td><td>임피던스로 R = ((Z₁ − Z₂)/(Z₁ + Z₂))² (STEP 4)</td></tr>
+        <tr><th>예</th><td>상온 금속 배선, 큰 결정의 열전도</td><td>반사 방지 코팅, 초격자, 양자 우물, 터널링</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_09_interfaces.html">9장으로 →</a> (Lecture 12).</b> 경계면이 여러 개면 각 경계에서 반사된 파동이 서로 간섭합니다(다층막, Bragg 거울). 그리고 STEP 4의 투과율 T로 포논이 두 고체 사이를 얼마나 건너는지 계산하면 경계 열저항(AMM, DMM)이 나옵니다.</p>
+</section>
+
+<footer>
+  <p>STEP 1은 분산이 없는(ω = vk) 파동이고, λ = 2, 그림 폭 W = 20λ의 주기 경계로 그렸습니다. "무수히"는 그림 폭 안에서 k를 간격 2π/W로 빽빽이 더한 것과 같고, 개수가 유한할 때는 k를 k₀ − 2Δk부터 k₀ + 2Δk까지 같은 간격으로 골랐습니다. STEP 2는 세기가 같은 두 파동입니다. STEP 3의 수치는 Lecture 11의 길이 척도 표와 그림을 따랐고, "D ~ λ" 판정은 10배 이내를 기준으로 했습니다. STEP 4는 K = a = M₁ = 1, 원자 600개 사슬(경계는 300번째)에 폭 σ = 8칸의 묶음을 보낸 시뮬레이션입니다. 묶음이 파장보다 길어(저주파) 연속체의 Z = √(KM)이 잘 맞고, 잰 R은 식과 0.01 이내로 같습니다.</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+function readHot() { C.hot = css('--hot'); }
+readHot();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readHot);
+// 에너지 → 색 (차가움 = 파랑, 뜨거움 = 빨강)
+function heat(e, lo, hi) {
+  const t = Math.max(0, Math.min(1, (e - lo) / (hi - lo)));
+  const a = [37, 99, 235], b = [201, 42, 42];
+  return `rgb(${a.map((v, i) => Math.round(v + t * (b[i] - v))).join(',')})`;
+}
+
+// ------------------------------------------------------------------ STEP 1: 파동 묶음
+const k1 = document.getElementById('k1');
+const W1 = 40, LAM1 = 2, K01 = 2 * Math.PI / LAM1, V1 = 1.8;   // 그림 폭 = 20λ (주기 경계)
+const S1 = { n: Infinity, t: 0 };
+const b1 = [...document.querySelectorAll('#s1 [data-n]')];
+function setN1(n) {
+  S1.n = n;
+  b1.forEach(b => b.classList.toggle('primary', (b.dataset.n === 'inf' ? Infinity : +b.dataset.n) === n));
+}
+b1.forEach(b => b.addEventListener('click', () => setN1(b.dataset.n === 'inf' ? Infinity : +b.dataset.n)));
+// 겹치는 파동들: k와 진폭 (유한 개수일 때)
+function comps1(n, dk) {
+  if (n === 1) return [[K01, 1]];
+  return Array.from({ length: n }, (_, i) => {
+    const k = K01 + dk * (-2 + 4 * i / (n - 1));
+    return [k, Math.exp(-((k - K01) ** 2) / (4 * dk * dk))];
+  });
+}
+const wrap1 = x => x - W1 * Math.floor(x / W1 + 0.5);            // [-W/2, W/2)
+function drawS1(dt) {
+  S1.t += dt;
+  const dk = +k1.value, n = S1.n, dx = 1 / (2 * dk);
+  const s = V1 * S1.t, c = wrap1(s);                              // 묶음 중심 (모든 마루가 맞는 곳)
+  const { g, w, h } = fit(document.getElementById('c1a'));
+  const x0 = 64, x1 = w - 10, X = x => x0 + (x + W1 / 2) / W1 * (x1 - x0);
+  const lanes = [26, 58, 90], amp = 11, yS = 196, ampS = 52;
+  // 위: 대표 파동 세 개
+  const cs = n === Infinity ? [[K01 - 2 * dk, Math.exp(-1)], [K01, 1], [K01 + 2 * dk, Math.exp(-1)]] : comps1(n, dk);
+  const shown = n === 1 ? [null, cs[0], null] : [cs[0], cs[Math.floor(cs.length / 2)], cs[cs.length - 1]];
+  const labels = ['k₀ − 2Δk', 'k₀', 'k₀ + 2Δk'];
+  shown.forEach((cmp, i) => {
+    const y = lanes[i];
+    text(g, labels[i], 6, y + 4, C.muted);
+    if (!cmp) { text(g, '(없음)', x0, y + 4, C.muted); return; }
+    g.strokeStyle = C.wave; g.globalAlpha = 0.65; g.lineWidth = 1.3; g.beginPath();
+    for (let px = x0; px <= x1; px += 1.5) {
+      const x = -W1 / 2 + (px - x0) / (x1 - x0) * W1;
+      const y2 = y - amp * cmp[1] * Math.cos(cmp[0] * (x - s));
+      px === x0 ? g.moveTo(px, y2) : g.lineTo(px, y2);
+    }
+    g.stroke(); g.globalAlpha = 1;
+  });
+  if (n === 9) text(g, '… 사이에 6개 더', x1, lanes[2] + 22, C.muted, 'right');
+  if (n === Infinity) text(g, '… 사이에 무수히', x1, lanes[2] + 22, C.muted, 'right');
+  text(g, '모두 더하면 ↓', 6, 128, C.fg);
+  // 아래: 합
+  const psi = x => {
+    if (n === Infinity) {
+      let env = 0;
+      for (let m = -2; m <= 2; m++) env += Math.exp(-((dk * (x - c - m * W1)) ** 2));
+      return env * Math.cos(K01 * (x - s));
+    }
+    let sum = 0, norm = 0;
+    for (const [k, a] of comps1(n, dk)) { sum += a * Math.cos(k * (x - s)); norm += a; }
+    return sum / norm;
+  };
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, yS); g.lineTo(x1, yS); g.stroke();
+  text(g, 'ψ (합)', 6, yS + 4, C.fg);
+  if (n === Infinity) {                                           // 테두리
+    g.strokeStyle = C.accent; g.setLineDash([4, 4]); g.lineWidth = 1.3;
+    for (const sg of [1, -1]) {
+      g.beginPath();
+      for (let px = x0; px <= x1; px += 2) {
+        const x = -W1 / 2 + (px - x0) / (x1 - x0) * W1;
+        let env = 0;
+        for (let m = -2; m <= 2; m++) env += Math.exp(-((dk * (x - c - m * W1)) ** 2));
+        px === x0 ? g.moveTo(px, yS - sg * ampS * env) : g.lineTo(px, yS - sg * ampS * env);
+      }
+      g.stroke();
+    }
+    g.setLineDash([]);
+  }
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let px = x0; px <= x1; px += 1) {
+    const x = -W1 / 2 + (px - x0) / (x1 - x0) * W1, y = yS - ampS * psi(x);
+    px === x0 ? g.moveTo(px, y) : g.lineTo(px, y);
+  }
+  g.stroke();
+  // 마루가 모두 맞는 곳
+  if (n > 1) {
+    g.strokeStyle = C.accent; g.lineWidth = 1.5; g.globalAlpha = 0.8;
+    g.beginPath(); g.moveTo(X(c), 12); g.lineTo(X(c), yS + ampS + 4); g.stroke(); g.globalAlpha = 1;
+  }
+  if (n === Infinity) {
+    const yB = h - 8, a = X(c - dx), b = X(c + dx);
+    if (a > x0 && b < x1) {
+      g.strokeStyle = C.accent; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(a, yB - 4); g.lineTo(a, yB + 2); g.moveTo(b, yB - 4); g.lineTo(b, yB + 2);
+      g.moveTo(a, yB - 1); g.lineTo(b, yB - 1); g.stroke();
+      text(g, '±Δx', (a + b) / 2, yB - 5, C.accent, 'center');
+    }
+    const la = X(c), lb = X(c + LAM1);
+    if (lb < x1) {
+      g.strokeStyle = C.wave; g.lineWidth = 1.2; const yL = yS - ampS - 8;
+      g.beginPath(); g.moveTo(la, yL); g.lineTo(lb, yL); g.moveTo(la, yL - 3); g.lineTo(la, yL + 3); g.moveTo(lb, yL - 3); g.lineTo(lb, yL + 3); g.stroke();
+      text(g, 'λ', lb + 4, yL + 4, C.wave);
+    }
+  }
+  const r = document.getElementById('r1');
+  if (n === Infinity)
+    r.innerHTML = `<span>겹친 파동</span> 무수히 <span>&nbsp;Δk =</span> ${dk.toFixed(2)} <span>&nbsp;Δx = 1/2Δk =</span> ${dx.toFixed(2)} <span>&nbsp;Δx·Δk =</span> ${(dx * dk).toFixed(2)}<br><span>λ =</span> ${LAM1} <span>&nbsp;Δx/λ =</span> ${(dx / LAM1).toFixed(1)}${dx / LAM1 < 1 ? ' <span>(묶음이 파장보다 짧음: k가 흐려짐)</span>' : ''}`;
+  else if (n === 1)
+    r.innerHTML = `<span>겹친 파동</span> 1 <span>&nbsp;→ 평면파: 어디서나 같은 진폭, 위치 없음</span>`;
+  else
+    r.innerHTML = `<span>겹친 파동</span> ${n} <span>&nbsp;Δk =</span> ${dk.toFixed(2)} <span>&nbsp;→ 묶음이 간격</span> ${(2 * Math.PI / (4 * dk / (n - 1))).toFixed(1)} <span>마다 되풀이 (그림 폭 ${W1})</span>`;
+}
+
+// ------------------------------------------------------------------ STEP 2: 확률과 진폭
+const p2 = document.getElementById('p2');
+const b2f = document.getElementById('b2f'), b2r = document.getElementById('b2r');
+const S2 = { t: 0, mode: 'fix', clock: 0, sum: 0, cnt: 0 };
+function setMode2(m) {
+  S2.mode = m; S2.clock = 0; S2.sum = 0; S2.cnt = 0;
+  b2f.classList.toggle('primary', m === 'fix'); b2r.classList.toggle('primary', m === 'rand');
+}
+b2f.addEventListener('click', () => setMode2('fix'));
+b2r.addEventListener('click', () => setMode2('rand'));
+p2.addEventListener('input', () => { if (S2.mode === 'rand') setMode2('fix'); });
+function drawS2(dt) {
+  S2.t += dt;
+  if (S2.mode === 'rand') {
+    S2.clock += dt;
+    if (S2.clock > 0.9 || S2.cnt === 0) {
+      S2.clock = 0;
+      p2.value = (Math.random() * 2 * Math.PI).toFixed(2);
+      S2.sum += 2 + 2 * Math.cos(+p2.value); S2.cnt++;
+    }
+  }
+  const ph = +p2.value, I = 2 + 2 * Math.cos(ph);
+  // 위: 두 길과 파동
+  let { g, w, h } = fit(document.getElementById('c2a'));
+  const sx = 14, dxp = 78, my = h / 2;
+  g.strokeStyle = C.line; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(sx, my); g.lineTo((sx + dxp) / 2, my - 50); g.lineTo(dxp, my); g.stroke();
+  g.beginPath(); g.moveTo(sx, my); g.lineTo((sx + dxp) / 2, my + 50); g.lineTo(dxp, my); g.stroke();
+  atom(g, sx, my, 5, C.wave);
+  text(g, '길 1', (sx + dxp) / 2, my - 56, C.muted, 'center');
+  text(g, '길 2', (sx + dxp) / 2, my + 66, C.muted, 'center');
+  g.fillStyle = C.accent; g.globalAlpha = 0.15 + 0.85 * I / 4; g.fillRect(dxp, my - 14, 7, 28); g.globalAlpha = 1;
+  g.strokeStyle = C.fg; g.lineWidth = 1; g.strokeRect(dxp, my - 14, 7, 28);
+  text(g, '검출기', dxp + 3, my + 28, C.muted, 'center');
+  const x0 = 140, x1 = w - 10, kx = 2 * Math.PI / 70, om = 2.2;
+  const lanes = [[34, 1, 0, 'ψ₁'], [92, 1, ph, 'ψ₂'], [h - 50, 2, null, 'ψ₁ + ψ₂']];
+  for (const [y, , , lab] of lanes) {
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    text(g, lab, x0 - 8, y + 4, C.fg, 'right');
+  }
+  const A = 13;
+  lanes.forEach(([y, , p], i) => {
+    g.strokeStyle = C.wave; g.lineWidth = i === 2 ? 2.2 : 1.5; g.beginPath();
+    for (let px = x0; px <= x1; px += 1.5) {
+      const th = kx * (px - x0) - om * S2.t;
+      const v = i === 2 ? Math.cos(th) + Math.cos(th + ph) : Math.cos(th + p);
+      const yy = y - A * v;
+      px === x0 ? g.moveTo(px, yy) : g.lineTo(px, yy);
+    }
+    g.stroke();
+  });
+  // 아래: 세기 막대
+  ({ g, w, h } = fit(document.getElementById('c2b')));
+  const bx0 = 116, bx1 = w - 14, BX = v => bx0 + v / 4 * (bx1 - bx0);
+  for (let v = 0; v <= 4; v++) {
+    g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.moveTo(BX(v), 8); g.lineTo(BX(v), h - 20); g.stroke();
+    text(g, String(v), BX(v), h - 6, C.muted, 'center');
+  }
+  const bars = [['입자: P₁ + P₂', 2, C.muted], ['파동: |ψ₁+ψ₂|²', I, C.wave]];
+  if (S2.mode === 'rand') bars.push([`평균 (${S2.cnt}번)`, S2.sum / Math.max(1, S2.cnt), C.accent]);
+  bars.forEach(([lab, v, col], i) => {
+    const y = 14 + i * 36;
+    text(g, lab, bx0 - 8, y + 13, C.fg, 'right');
+    g.fillStyle = col; g.fillRect(BX(0), y, Math.max(0, BX(v) - BX(0)), 18);
+    text(g, v.toFixed(2), Math.min(BX(v) + 5, bx1 - 30), y + 13, C.fg);
+  });
+  if (S2.mode !== 'rand') text(g, '평균: "위상 무작위"를 누르면 나타남', bx0, 14 + 2 * 36 + 13, C.muted);
+  document.getElementById('r2').innerHTML =
+    `<span>Δφ =</span> ${(ph / Math.PI).toFixed(2)}π <span>&nbsp;|ψ₁+ψ₂|² = 2 + 2cosΔφ =</span> ${I.toFixed(2)} <span>&nbsp;간섭 항 =</span> ${(2 * Math.cos(ph)).toFixed(2)}`;
+}
+
+// ------------------------------------------------------------------ STEP 3: 길이 척도
+const d3 = document.getElementById('d3');
+// 단위 nm. 범위는 [작은 값, 큰 값], Lecture 11 길이 척도 그림
+const ROWS3 = [
+  { name: '전자 (구리, 300 K)', lam: [0.46, 0.46], lamLab: 'λF 0.46 nm', mfp: [40, 40], mfpLab: 'Λ 40 nm' },
+  { name: '포논 (300 K)', lam: [1, 1e6], lamLab: '1 nm ≤ λ ≤ mm', mfp: [1, 1e4], mfpLab: 'Λ: 1 nm – 10 μm' },
+  { name: '광자 (열복사, 300 K)', lam: [1e4, 1e4], lamLab: 'λ 피크 ~10 μm', mfp: [Infinity, Infinity], mfpLab: 'Λ → ∞ (진공)' },
+];
+const fmtLen = d => d >= 1000 ? `${+(d / 1000).toPrecision(2)} μm` : `${+d.toPrecision(2)} nm`;
+function verdict3(row, D) {
+  const [lo, hi] = row.lam;
+  let a;
+  if (D > 10 * hi) a = 'D ≫ λ → 입자 그림';
+  else if (D * 10 < lo) a = 'D ≪ λ → 파동 그림';
+  else a = lo === hi ? 'D ~ λ → 파동 효과 (위상 유지 시)' : 'λ 범위 안 → 일부 모드는 파동 효과';
+  const [ml, mh] = row.mfp;
+  let b;
+  if (D < ml) b = lo === hi || ml === mh ? 'D < Λ → 탄도' : '모든 모드 탄도';
+  else if (D > mh) b = ml === mh ? 'D > Λ → 확산' : '모든 모드 확산';
+  else b = 'Λ > D인 모드만 탄도';
+  return [a, b];
+}
+function drawS3() {
+  const lD = +d3.value, D = Math.pow(10, lD);
+  const { g, w, h } = fit(document.getElementById('c3a'));
+  const x0 = 14, x1 = w - 14, X = l => x0 + (l + 1) / 5 * (x1 - x0);
+  const yAx = h - 26;
+  g.strokeStyle = C.muted; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, yAx); g.lineTo(x1, yAx); g.stroke();
+  ['0.1 nm', '1 nm', '10 nm', '100 nm', '1 μm', '10 μm'].forEach((s, i) => {
+    const x = X(i - 1);
+    g.beginPath(); g.moveTo(x, yAx - 4); g.lineTo(x, yAx + 4); g.stroke();
+    text(g, s, Math.min(Math.max(x, x0 + 18), x1 - 18), yAx + 17, C.muted, 'center');
+  });
+  const lx = l => X(Math.max(-1, Math.min(4, l)));
+  ROWS3.forEach((row, i) => {
+    const y = 34 + i * 62;
+    text(g, row.name, x0, y - 14, C.fg);
+    g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    // λ (파랑)
+    const [lo, hi] = row.lam.map(Math.log10);
+    if (lo === hi) {
+      const x = lx(lo);
+      g.fillStyle = C.wave; g.beginPath(); g.moveTo(x, y - 7); g.lineTo(x - 6, y + 4); g.lineTo(x + 6, y + 4); g.closePath(); g.fill();
+      text(g, row.lamLab, Math.min(x, x1 - 60), y + 18, C.wave, x > x1 - 60 ? 'right' : 'center');
+    } else {
+      g.strokeStyle = C.wave; g.lineWidth = 3; g.beginPath(); g.moveTo(lx(lo), y - 2); g.lineTo(lx(hi), y - 2); g.stroke();
+      if (hi > 4) arrow(g, x1 - 12, y - 2, x1, y - 2, C.wave, 2, 6);
+      text(g, row.lamLab, lx(lo), y + 18, C.wave);
+    }
+    // Λ (빨강)
+    if (row.mfp[0] === Infinity) {
+      arrow(g, X(3), y + 3, x1, y + 3, C.hot, 3, 7);
+      text(g, row.mfpLab, X(3), y - 8, C.hot);
+    } else {
+      const [ml, mh] = row.mfp.map(Math.log10);
+      if (ml === mh) {
+        g.fillStyle = C.hot; g.beginPath(); g.arc(lx(ml), y, 6, 0, 2 * Math.PI); g.fill();
+        text(g, row.mfpLab, lx(ml), y + 18, C.hot, 'center');
+      } else {
+        g.strokeStyle = C.hot; g.lineWidth = 3; g.beginPath(); g.moveTo(lx(ml), y + 3); g.lineTo(lx(mh), y + 3); g.stroke();
+        text(g, row.mfpLab, lx(mh), y + 18, C.hot, 'right');
+      }
+    }
+  });
+  // D 선
+  const xd = X(lD);
+  g.strokeStyle = C.accent; g.lineWidth = 2; g.beginPath(); g.moveTo(xd, 6); g.lineTo(xd, yAx); g.stroke();
+  text(g, `D = ${fmtLen(D)}`, Math.min(Math.max(xd + 5, x0), x1 - 70), 10, C.accent, 'left', 'top');
+  document.getElementById('r3').innerHTML = `<span>시료 크기 D =</span> ${fmtLen(D)} <span>&nbsp;(10배 이내면 "~")</span>` +
+    ROWS3.map(row => { const [a, b] = verdict3(row, D); return `<br><span>${row.name.split(' ')[0]}:</span> ${a} <span>·</span> ${b}`; }).join('');
+}
+
+// ------------------------------------------------------------------ STEP 4: 경계면과 임피던스
+const m4 = document.getElementById('m4');
+const N4 = 600, J4 = 300, J04 = 150, SIG4 = 8, DT4 = 0.1, TEND4 = 215;
+const S4 = { u: new Float64Array(N4), v: new Float64Array(N4), a: new Float64Array(N4), M: new Float64Array(N4), t: 0, E0: 1, m2: null, hold: 0, R: null };
+function acc4() {
+  const { u, a, M } = S4;
+  for (let j = 0; j < N4; j++) a[j] = ((j > 0 ? u[j - 1] : 0) - 2 * u[j] + (j < N4 - 1 ? u[j + 1] : 0)) / M[j];
+}
+function energy4() {                       // [경계 왼쪽, 오른쪽] 에너지 (용수철 에너지는 양 끝 원자에 반씩)
+  const { u, v, M } = S4; let L = 0, Rr = 0;
+  for (let j = 0; j < N4; j++) {
+    let e = 0.5 * M[j] * v[j] * v[j];
+    if (j < N4 - 1) e += 0.25 * (u[j + 1] - u[j]) ** 2;
+    if (j > 0) e += 0.25 * (u[j] - u[j - 1]) ** 2;
+    if (j < J4) L += e; else Rr += e;
+  }
+  return [L, Rr];
+}
+function reset4() {
+  S4.m2 = Math.pow(10, +m4.value); S4.t = 0; S4.hold = 0; S4.R = null;
+  const { u, v, M } = S4;
+  for (let j = 0; j < N4; j++) { M[j] = j < J4 ? 1 : S4.m2; u[j] = Math.exp(-((j - J04) ** 2) / (2 * SIG4 * SIG4)); }
+  for (let j = 0; j < N4; j++) v[j] = j > 0 && j < N4 - 1 ? -(u[j + 1] - u[j - 1]) / 2 : 0;   // 오른쪽으로 가는 묶음 (음속 1)
+  acc4();
+  const [L, Rr] = energy4(); S4.E0 = L + Rr;
+}
+document.getElementById('b4').addEventListener('click', reset4);
+function step4() {
+  const { u, v, a } = S4;
+  for (let j = 0; j < N4; j++) { v[j] += 0.5 * DT4 * a[j]; u[j] += DT4 * v[j]; }
+  acc4();
+  for (let j = 0; j < N4; j++) v[j] += 0.5 * DT4 * a[j];
+  S4.t += DT4;
+}
+function drawS4(dt) {
+  if (S4.m2 === null || Math.abs(Math.log10(S4.m2) - +m4.value) > 1e-9) reset4();
+  if (S4.t < TEND4) {
+    const n = Math.min(14, Math.max(1, Math.round(dt * 14 / DT4)));
+    for (let i = 0; i < n && S4.t < TEND4; i++) step4();
+    if (S4.t >= TEND4) S4.R = energy4()[0] / S4.E0;
+  } else {
+    S4.hold += dt;
+    if (S4.hold > 6) reset4();
+  }
+  const z = Math.sqrt(S4.m2), r = (1 - z) / (1 + z), t = 2 / (1 + z), Rth = r * r, Tth = 1 - Rth;
+  const [eL, eR] = energy4().map(e => e / S4.E0);
+  // 사슬
+  let { g, w, h } = fit(document.getElementById('c4a'));
+  const jA = 100, jB = 560, x0 = 10, x1 = w - 10, X = j => x0 + (j - jA) / (jB - jA) * (x1 - x0);
+  const y0 = 100, sc = 40;
+  g.fillStyle = C.wave2; g.globalAlpha = 0.08; g.fillRect(X(J4), 22, x1 - X(J4), 160); g.globalAlpha = 1;
+  g.strokeStyle = C.wave2; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+  g.beginPath(); g.moveTo(X(J4), 22); g.lineTo(X(J4), 182); g.stroke(); g.setLineDash([]);
+  text(g, `물질 1  Z₁ = 1`, x0, 14, C.fg);
+  text(g, `물질 2  Z₂ = √M₂ = ${z.toFixed(2)}`, x1, 14, C.wave2, 'right');
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke();
+  const { u, M } = S4;
+  g.strokeStyle = C.wave; g.lineWidth = 1.8; g.beginPath();
+  for (let j = jA; j <= jB; j++) { const y = y0 - sc * u[j]; j === jA ? g.moveTo(X(j), y) : g.lineTo(X(j), y); }
+  g.stroke();
+  for (let j = jA; j <= jB; j += 4) atom(g, X(j), y0 - sc * u[j], Math.min(4.5, 1.8 * Math.pow(M[j], 0.3)), j < J4 ? C.atom : C.wave2);
+  if (S4.t > 195) {                               // 묶음이 나뉜 뒤: 진폭 계수 표시
+    let jr = jA, jt = J4;
+    for (let j = jA; j < J4 - 4; j++) if (Math.abs(u[j]) > Math.abs(u[jr])) jr = j;
+    for (let j = J4; j <= jB; j++) if (Math.abs(u[j]) > Math.abs(u[jt])) jt = j;
+    if (Math.abs(u[jr]) > 0.03) text(g, `r = ${r.toFixed(2)}`, X(jr), y0 - sc * u[jr] + (u[jr] < 0 ? 16 : -8), C.accent, 'center');
+    text(g, `t = ${t.toFixed(2)}`, Math.min(X(jt), x1 - 30), y0 - sc * u[jt] - 8, C.accent, 'center');
+  } else if (S4.t < 40) {
+    text(g, '들어오는 묶음 →', X(J04 + S4.t), y0 - sc - 10, C.muted, 'center');
+  }
+  // 에너지 막대
+  const bx0 = 92, bx1 = w - 12, BX = v => bx0 + v * (bx1 - bx0);
+  [['경계 왼쪽', eL, C.wave, Rth], ['경계 오른쪽', eR, C.wave2, Tth]].forEach(([lab, v, col, th], i) => {
+    const y = h - 50 + i * 24;
+    text(g, lab, bx0 - 8, y + 12, C.fg, 'right');
+    g.fillStyle = C.grid; g.fillRect(bx0, y, bx1 - bx0, 16);
+    g.fillStyle = col; g.fillRect(bx0, y, Math.max(0, Math.min(1, v)) * (bx1 - bx0), 16);
+    g.strokeStyle = C.fg; g.lineWidth = 2; g.beginPath(); g.moveTo(BX(th), y - 3); g.lineTo(BX(th), y + 19); g.stroke();
+  });
+  // R vs Z2/Z1
+  ({ g, w, h } = fit(document.getElementById('c4b')));
+  const f = frame(g, w, h, [-0.5, 0.5], [0, 0.35], { l: 40, r: 12, t: 10, b: 26 });
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.y1); g.lineTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  [[-0.5, '0.32'], [Math.log10(0.5), '0.5'], [0, '1'], [Math.log10(2), '2'], [0.5, '3.2']].forEach(([l, s]) => text(g, s, f.X(l), f.y0 + 14, C.muted, 'center'));
+  text(g, 'Z₂/Z₁', f.x1, f.y0 - 4, C.muted, 'right');
+  [0, 0.1, 0.2, 0.3].forEach(v => text(g, v.toFixed(1), f.x0 - 6, f.Y(v) + 4, C.muted, 'right'));
+  text(g, 'R', f.x0 + 6, f.y1 + 8, C.muted);
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= 100; i++) {
+    const l = -0.5 + i / 100, zz = Math.pow(10, l), R = ((1 - zz) / (1 + zz)) ** 2;
+    i === 0 ? g.moveTo(f.X(l), f.Y(R)) : g.lineTo(f.X(l), f.Y(R));
+  }
+  g.stroke();
+  const lz = Math.log10(z);
+  g.strokeStyle = C.accent; g.lineWidth = 1; g.setLineDash([3, 3]);
+  g.beginPath(); g.moveTo(f.X(lz), f.y0); g.lineTo(f.X(lz), f.y1); g.stroke(); g.setLineDash([]);
+  if (S4.R !== null) atom(g, f.X(lz), f.Y(S4.R), 5, C.accent);
+  else { g.strokeStyle = C.accent; g.lineWidth = 1.5; g.beginPath(); g.arc(f.X(lz), f.Y(Rth), 5, 0, 2 * Math.PI); g.stroke(); }
+  document.getElementById('r4').innerHTML =
+    `<span>M₂/M₁ =</span> ${S4.m2.toFixed(2)} <span>&nbsp;Z₂/Z₁ =</span> ${z.toFixed(2)} <span>&nbsp;r =</span> ${r.toFixed(2)} <span>&nbsp;t =</span> ${t.toFixed(2)}<br><span>R =</span> ${Rth.toFixed(3)} <span>&nbsp;T =</span> ${Tth.toFixed(3)}` +
+    (S4.R !== null ? ` <span>&nbsp;잰 R =</span> ${S4.R.toFixed(3)}` : ` <span>&nbsp;(묶음이 가는 중…)</span>`);
+}
+
+// ------------------------------------------------------------------ 줄에 맞춰 그림 바꾸기
+const ACTS8 = {
+  s1: a => setN1(a === 'n1' ? 1 : a === 'n3' ? 3 : Infinity),
+  s2: a => { if (a === 'rand') setMode2('rand'); else { setMode2('fix'); p2.value = a === 'phi0' ? 0 : Math.PI; } },
+  s3: a => { d3.value = a === 'cu' ? 1 : 3; },
+  s4: a => { m4.value = a === 'heavy' ? Math.log10(4) : -1; },
+};
+
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs(ACTS8);
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

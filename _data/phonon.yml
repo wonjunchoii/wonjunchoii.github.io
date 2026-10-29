@@ -1,0 +1,66 @@
+# Chapter list for the phonon notes hub (_posts/2026-10-29-phonon-lecture-notes.md).
+# The HTML files live in `base` and are served as-is. To add a chapter,
+# drop the file in `base` and add an entry below. Step titles and figure
+# counts are read from each file at runtime, so they never need updating here.
+course: Thermal Properties of Materials
+base: /assets/notes/phonon/
+parts:
+  - label: Part I
+    name: 격자 진동과 포논
+    chapters:
+      - num: 1
+        file: phonon_01_dispersion.html
+        title: 원자 사슬과 분산 관계
+        lecture: Lecture 3
+        summary: 용수철로 이어진 원자 사슬에서 왜 파동이 생기는지, 그 진동수가 파수에 따라 어떻게 정해지는지 유도한다.
+      - num: 2
+        file: phonon_02_modes.html
+        title: 정규 모드와 포논
+        lecture: Lecture 3
+        summary: 불규칙한 진동을 정규 모드로 분해하고, 2원자 사슬과 3차원의 가지를 거쳐 모드의 에너지를 양자화한다.
+      - num: 3
+        file: phonon_03_dos_heat.html
+        title: 상태 밀도와 비열
+        lecture: Lecture 4-5
+        summary: 모드를 세는 상태 밀도와 모드를 채우는 Bose-Einstein 분포를 곱해 내부 에너지와 비열을 구한다.
+  - label: Part II
+    name: 입자로 보는 열 수송
+    chapters:
+      - num: 4
+        file: phonon_04_bte_kappa.html
+        title: 포논 열전도와 BTE
+        lecture: Lecture 5-6
+        summary: 온도 기울기가 만든 분포의 작은 어긋남에서 푸리에 법칙과 열전도도 공식을 끌어낸다.
+      - num: 5
+        file: phonon_05_scattering.html
+        title: 비조화성과 포논 산란
+        lecture: Lecture 6-8
+        summary: 포논의 수명이 어디서 오는지, 비조화 퍼텐셜과 페르미 황금률, Normal과 Umklapp 산란으로 따라간다.
+      - num: 6
+        file: phonon_06_low_kappa.html
+        title: 낮은 열전도와 비정질
+        lecture: Lecture 9
+        summary: 탄도 수송, 열전도를 낮추는 방법, 2차원 물질의 대칭, 그리고 결정이 아닌 고체의 열 전달.
+      - num: 7
+        file: phonon_07_electrons.html
+        title: 금속의 전자 수송
+        lecture: Lecture 10
+        summary: 금속 전자의 저항과 열전도, Wiedemann-Franz 법칙이 맞는 경우와 깨지는 경우, 가는 배선의 크기 효과.
+  - label: Part III
+    name: 파동으로 보는 열 수송
+    chapters:
+      - num: 8
+        file: phonon_08_waves.html
+        title: 파동으로 보는 운반자
+        lecture: Lecture 11
+        summary: 운반자를 파동 묶음으로 보고, 확률과 진폭의 차이가 언제 중요해지는지와 경계면에서의 반사를 본다.
+      - num: 9
+        file: phonon_09_interfaces.html
+        title: 다층막과 경계 열저항
+        lecture: Lecture 12
+        summary: 얇은 막과 Bragg 거울에서의 간섭, 그리고 두 고체 사이의 경계 열저항과 AMM, DMM 모형.
+      - num: 10
+        file: phonon_10_coherence.html
+        title: 소멸파와 결맞음
+        lecture: Lecture 13
+        summary: 터널링, 결맞음 길이, 초격자의 결맞는 열전도, 그리고 Anderson 국재화.

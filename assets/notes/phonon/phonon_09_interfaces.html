@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>다층막과 경계 열저항</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 12 Energy transfer by waves, thermal boundary resistance</div>
+  <h1>9장. 경계면이 여럿일 때, 그리고 경계 열저항</h1>
+  <p>8장에서는 경계면 하나에서의 반사를 봤습니다. 이번 장에서는 경계면이 두 개(얇은 막)나 여러 개(다층막)일 때 각 경계에서 반사된 파동이 어떻게 간섭하는지 보고, 같은 투과율 개념으로 포논이 두 고체 사이를 건널 때 생기는 경계 열저항과 그 두 모형(AMM, DMM)을 봅니다.</p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <p class="legend-terms">색 약속: <span class="tV">파동 / 포논</span><span class="tC">지금 보는 것 (결과)</span><span class="tTau">경계 / 막</span><span class="tGrad">뜨거움</span></p>
+  <nav class="toc" aria-label="단계">
+    <a href="phonon_08_waves.html">← 8장</a>
+    <a href="#s1"><b>1</b>얇은 막 하나</a>
+    <a href="#s2"><b>2</b>Bragg 거울</a>
+    <a href="#s3"><b>3</b>경계 열저항</a>
+    <a href="#s4"><b>4</b>AMM과 DMM</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1 · Lecture 11–12 Thin film, anti-reflection coating</div>
+    <h2>얇은 막 하나: 두 반사파의 간섭</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>유리에 얇은 막(MgF₂, n = 1.38)을 입히면 경계면이 두 개가 됩니다. 빛은 막의 앞면에서 한 번, 뒷면에서 한 번 반사되고, 뒷면 반사파는 막을 왕복한 만큼 늦게 나옵니다. 두 반사파가 마루와 골로 만나면 지워져서 반사가 줄어듭니다. 8장 STEP 2의 "진폭을 더한다"가 실제로 쓰이는 곳입니다.</p>
+      <p class="try">해 보기: 막 두께를 0에서 천천히 늘려 보세요. 반사율이 가장 작아지는 두께와, 다시 코팅 없는 값(4%)으로 돌아오는 두께는 각각 얼마인가요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-fig="r1" data-hl="c1a">
+          <div class="d-math">\(r_1 = \dfrac{n_0-n_2}{n_0+n_2},\qquad r_{23} = \dfrac{n_2-n_s}{n_2+n_s}\)</div>
+          <div class="d-why">8장 STEP 4의 진폭 반사 계수(빛의 임피던스 ∝ n). 공기/MgF₂에서 r₁ = −0.16, MgF₂/유리에서 r₂₃ = −0.04입니다.</div>
+          <div class="d-look">위 그림의 "앞면 반사"와 "뒷면 반사" 줄.</div>
+        </div>
+        <div class="d-step" data-fig="delta" data-hl="c1a">
+          <div class="d-math">\(\Delta\varphi = \dfrac{4\pi n_2 d}{\lambda}\)</div>
+          <div class="d-why">뒷면 반사파가 막을 왕복하며 얻는 위상(Lecture 12의 round-trip phase). 막 안에서는 파장이 λ/n₂로 짧아져서 n₂d가 들어갑니다.</div>
+          <div class="d-look">두께를 바꾸면 뒷면 반사 줄만 옆으로 밀립니다.</div>
+        </div>
+        <div class="d-step key" data-fig="sum" data-hl="c1a c1b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(r \approx r_1 + t_{12}\,t_{21}\,r_{23}\,e^{i\Delta\varphi},\qquad R = |r|^2\)</div>
+          <div class="d-why">두 반사파의 진폭을 더합니다. 막 안에서 여러 번 오가는 반사까지 모두 넣은 정확한 값은 아래 그래프의 실선(STEP 2의 전달 행렬로 계산)이고, 이 막에서는 두 파동만 더한 값과 거의 같습니다.</div>
+          <div class="d-look">위 그림 맨 아래 줄 = 두 반사파의 합.</div>
+        </div>
+        <div class="d-step" data-fig="quarter" data-hl="c1a c1b" data-act="q">
+          <div class="d-math">\(n_2 d = \dfrac{\lambda}{4} \;\Rightarrow\; \Delta\varphi = \pi:\quad R = 4\% \to 1.4\%\)</div>
+          <div class="d-why">λ/4 막에서는 뒷면 반사파가 반 파장 늦어 앞면 반사파와 반대 위상으로 만납니다. 두 진폭의 크기가 같으면(n₂ = √(n₀n<sub>s</sub>) = 1.22) 반사가 0이 됩니다. MgF₂는 그보다 커서 1.4%까지 줄어듭니다.</div>
+          <div class="d-look">두께를 λ/4로 옮겼습니다. 합의 진폭이 줄고 그래프가 바닥입니다.</div>
+        </div>
+        <div class="d-step" data-fig="half" data-hl="c1a c1b" data-act="h">
+          <div class="d-math">\(n_2 d = \dfrac{\lambda}{2} \;\Rightarrow\; \Delta\varphi = 2\pi:\quad R = 4\%\)</div>
+          <div class="d-why">한 파장 늦으면 다시 같은 위상입니다. 반사율이 코팅 없는 유리와 똑같아서, 막이 없는 것처럼 보입니다.</div>
+          <div class="d-look">두께를 λ/2로 옮겼습니다.</div>
+        </div>
+        <div class="d-step" data-fig="bte" data-hl="c1b">
+          <div class="d-math">\(R_\text{확률} = R_1 + \dfrac{T_1^2 R_2}{1-R_1R_2} \approx 2.7\%,\;\text{두께와 무관}\)</div>
+          <div class="d-why">입자 그림(BTE)처럼 반사 확률만 더하면 두께와 상관없는 평평한 값이 나옵니다. 실제 반사율이 두께에 따라 1.4%와 4% 사이를 오르내리는 것이 간섭이고, 막이 파장보다 훨씬 두껍거나 빛의 결맞음 길이(Lecture 13)보다 두꺼우면 그 오르내림이 평균되어 이 점선으로 돌아갑니다.</div>
+          <div class="d-look">그래프의 회색 점선.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>막을 입히면 반사파가 두 개 생기고, 둘의 위상 차는 막 두께가 정합니다. λ/4 두께에서는 서로 지워져 반사가 줄고, λ/2에서는 막이 없는 것과 같습니다. 이 두께 의존은 진폭을 더하는 파동 그림에서만 나옵니다.</p>
+        <details><summary>확인 질문: 같은 코팅이 초록빛(λ = 550 nm)에 맞춰져 있다면 막의 실제 두께는?</summary><p>n₂d = λ/4 → d = 550/(4 × 1.38) ≈ 100 nm. 다른 색에서는 λ/4 조건에서 벗어나 반사가 조금 남는데, 카메라 렌즈가 보랏빛으로 비치는 이유입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">왼쪽: 공기 | <span style="color:var(--wave2)">막</span> | 유리, 두 반사. 오른쪽: 돌아오는 두 반사파와 그 합 (세로 크기 = 진폭)</p><canvas id="c1a" style="height:210px"></canvas></div>
+    <div class="card"><p class="cap">반사율 R vs 막 두께 n₂d/λ. <span style="color:var(--wave)">실선 = 파동 (정확한 값)</span>, <span style="color:var(--muted)">┅ 코팅 없음 4%, ··· 확률을 더한 값</span></p><canvas id="c1b" style="height:180px"></canvas></div>
+    <div class="card controls">
+      <label>막 두께 n₂d/λ <input type="range" id="q1" min="0" max="0.75" step="0.005" value="0.12"></label>
+      <div class="readout" id="r1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2 · Lecture 12 Transfer matrix, Bragg mirror (DBR)</div>
+    <h2>여러 겹: 반사가 모두 같은 위상이면 거울이 된다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>굴절률이 3과 3.5인 두 막을 번갈아 쌓습니다. 경계 하나의 반사는 0.6%밖에 안 되지만, 특정 파장에서는 모든 경계의 반사파가 같은 위상으로 돌아와 더해집니다. 겹을 많이 쌓으면 그 파장의 반사율이 100%에 가까워집니다. 금속 없이 유전체만으로 만든 거울입니다.</p>
+      <p class="try">해 보기: 파수를 2.0 μm⁻¹에 두고 겹 수를 1에서 40까지 늘려 보세요. 막 안의 파동은 어떻게 되나요? 그다음 파수를 1.5로 옮겨 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-fig="phase" data-hl="c2a">
+          <div class="d-math">\(\varphi = \dfrac{2\pi n z\cos\theta}{\lambda}\)</div>
+          <div class="d-why">두께 z인 층을 지나는 동안 쌓이는 위상(Lecture 12). 여기서는 수직 입사(cos θ = 1)만 봅니다.</div>
+          <div class="d-look">위 그림의 줄무늬 = 두 종류의 막.</div>
+        </div>
+        <div class="d-step" data-fig="tmm" data-hl="c2a">
+          <div class="d-math">\(\begin{pmatrix}E(0)\\H(0)\end{pmatrix} = \begin{pmatrix}\cos\varphi & -ip\sin\varphi\\ -\tfrac{i}{p}\sin\varphi & \cos\varphi\end{pmatrix}\begin{pmatrix}E(d)\\H(d)\end{pmatrix},\quad p \propto \tfrac1n\)</div>
+          <div class="d-why">전달 행렬(Lecture 12). 층 하나의 앞과 뒤의 장(E, H)을 잇습니다. 여러 층이면 행렬을 차례로 곱하면 되고(M = M₁M₂M₁M₂⋯), 마지막에 양쪽 매질의 파동과 맞추면 r과 t가 나옵니다.</div>
+          <div class="d-look">위 그림의 |E| 곡선이 이 행렬로 층마다 계산한 것입니다.</div>
+        </div>
+        <div class="d-step key" data-fig="bragg" data-hl="c2a c2b" data-act="center">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\dfrac{4\pi n_1 d_1}{\lambda} + \dfrac{4\pi n_2 d_2}{\lambda} = 2\pi \;\Rightarrow\; \dfrac1\lambda = \dfrac{1}{2(n_1d_1+n_2d_2)} \approx 2.0\,\mu\text{m}^{-1}\)</div>
+          <div class="d-why">한 주기를 왕복하는 위상이 2π이면 모든 경계의 반사파가 같은 위상으로 돌아옵니다(Bragg 조건). 슬라이드의 값(n₁ = 3, d₁ = 41.7 nm, n₂ = 3.5, d₂ = 35.2 nm)이면 각 층이 λ/4 두께입니다.</div>
+          <div class="d-look">파수를 2.0 μm⁻¹로 옮겼습니다.</div>
+        </div>
+        <div class="d-step" data-fig="stop" data-hl="c2a c2b" data-act="many">
+          <div class="d-math">\(N \uparrow:\; R \to 1\;\text{(정지 대역, stop band)}\)</div>
+          <div class="d-why">정지 대역 안의 파동은 막 속으로 들어갈수록 지수적으로 약해져서 반대쪽으로 나가지 못하고 모두 돌아옵니다. 대역의 폭은 두 굴절률의 차이가 클수록 넓어집니다.</div>
+          <div class="d-look">겹 수를 40으로 늘렸습니다. |E|가 막 속에서 줄어들고, 아래 그래프에 R ≈ 1인 대역이 생깁니다.</div>
+        </div>
+        <div class="d-step" data-fig="pass" data-hl="c2a c2b" data-act="out">
+          <div class="d-math">\(\text{대역 밖: } R \text{가 작고 출렁임}\)</div>
+          <div class="d-why">Bragg 조건에서 벗어나면 반사파들의 위상이 엇갈려 대부분 지워지고, 파동이 막을 통과합니다.</div>
+          <div class="d-look">파수를 1.5 μm⁻¹로 옮겼습니다. |E|가 막 끝까지 이어지고 투과합니다.</div>
+        </div>
+        <div class="d-step" data-fig="phonon" data-hl="c2b">
+          <div class="d-math">\(\text{포논: 초격자} \;\Rightarrow\; \text{미니 갭}\)</div>
+          <div class="d-why">두 물질을 주기적으로 쌓은 초격자에서는 포논도 같은 이유로 특정 진동수에서 막힙니다(Lecture 11 첫 표, Lecture 13). 2장 STEP 2의 2원자 사슬 갭과 같은 원리입니다.</div>
+          <div class="d-look">그림은 빛 기준 그대로입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>반사가 아주 약한 경계라도 주기적으로 많이 쌓으면, Bragg 조건을 만족하는 파장에서 반사파가 모두 보강되어 거의 완전히 반사됩니다. 반대로 조건에서 벗어난 파장은 그대로 통과합니다. 주기 구조가 파동의 통과를 "진동수별로" 고르는 것입니다.</p>
+        <details><summary>확인 질문: 겹 수가 같을 때, 정지 대역 중심의 반사율을 더 키우려면?</summary><p>두 굴절률의 차이를 키웁니다. 경계 하나의 반사 r = (n₂ − n₁)/(n₂ + n₁)가 커져 적은 겹으로도 R → 1에 가깝고 대역도 넓어집니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">막 속의 파동 진폭 |E| (입사 = 1). 막 왼쪽에서는 들어온 파동과 반사파가 겹쳐 출렁입니다. <span style="color:var(--wave2)">줄무늬 = n₁ = 3, n₂ = 3.5</span></p><canvas id="c2a" style="height:190px"></canvas></div>
+    <div class="card"><p class="cap">반사율 R vs 파수 1/λ. <span style="color:var(--accent)">┃ 지금 파수</span></p><canvas id="c2b" style="height:180px"></canvas></div>
+    <div class="card controls">
+      <label>겹 수 N (n₁n₂ 쌍) <input type="range" id="n2" min="1" max="40" step="1" value="10"></label>
+      <label>파수 1/λ (μm⁻¹) <input type="range" id="w2" min="1" max="3" step="0.005" value="2.01"></label>
+      <div class="readout" id="r2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3 · Lecture 12 Thermal boundary resistance</div>
+    <h2>경계 열저항: 경계에서 온도가 뚝 떨어진다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>열이 두 고체 사이를 지날 때, 경계면에서 포논의 일부는 넘어가지 못하고 튕겨 나옵니다(8장 STEP 4의 반사). 넘어가는 몫이 적을수록 경계 앞에는 뜨거운 포논이, 뒤에는 차가운 포논이 남아서 경계에서 온도가 계단처럼 떨어집니다. 이것이 경계 열저항(Kapitza 저항)입니다.</p>
+      <p class="try">해 보기: 투과율 τ₁₂를 1에서 0.01로 줄여 보세요. 위 그림의 양쪽 색과 아래 그래프의 온도 계단은 어떻게 되나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-fig="def" data-hl="c3b">
+          <div class="d-math">\(q = \dfrac{\Delta T}{R} = G\,\Delta T\)</div>
+          <div class="d-why">경계 열저항 R(m²K/W)과 그 역수인 경계 열전도 G(TBC). 원자 하나 두께의 경계 ~10⁻⁸, 2–10 nm 비정질 층 ~10⁻⁷, 칩과 방열판 사이의 열 계면 물질 ~10⁻⁵ m²K/W입니다 (Lecture 12).</div>
+          <div class="d-look">아래 그래프의 계단 높이 ΔT.</div>
+        </div>
+        <div class="d-step" data-fig="flux" data-hl="c3a">
+          <div class="d-math">\(q_{1\to2} = \dfrac12\displaystyle\sum_\text{pol}\int_0^1\!\!\int \hbar\omega\, v_1\mu_1\, f(\omega,T_1)\,\htmlClass{tC}{\tau_{12}}\,D_1(\omega)\,d\omega\,d\mu_1\)</div>
+          <div class="d-why">1에서 경계로 달려오는 포논(경계에 수직인 속도 v₁cos θ₁ = v₁μ₁)이 확률 τ₁₂로 넘어가며 나르는 에너지 (Lecture 12). ½과 μ₁ 적분은 경계 쪽으로 향하는 반구만 세기 때문입니다.</div>
+          <div class="d-look">위 그림: 경계에 닿은 포논 중 τ₁₂만큼만 넘어갑니다.</div>
+        </div>
+        <div class="d-step" data-fig="net" data-hl="c3a">
+          <div class="d-math">\(q = q_{1\to2} - q_{2\to1} \propto f(T_1) - f(T_2) \approx \dfrac{\partial f}{\partial T}\,\Delta T\)</div>
+          <div class="d-why">양쪽 온도가 같으면 오가는 흐름이 같아 알짜 흐름이 0입니다(상세 균형). 그래서 알짜 흐름은 두 온도의 분포 차이에 비례하고, ħω ∂f/∂T가 모드 비열 C가 됩니다(3장).</div>
+          <div class="d-look">위 그림: 왼쪽에서 넘어가는 뜨거운 포논과 오른쪽에서 넘어오는 차가운 포논의 차이가 알짜 열 흐름입니다.</div>
+        </div>
+        <div class="d-step key" data-fig="G" data-hl="c3a c3b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(G = \dfrac14\displaystyle\sum_\text{pol}\int C_1\,v_1\,\htmlClass{tC}{\tau_{12}}\,d\omega \qquad\longleftrightarrow\qquad \kappa = \dfrac13\int C\,v\,\ell\,d\omega\)</div>
+          <div class="d-why">τ₁₂가 방향과 무관하면 μ₁ 적분이 ½이 되어 ¼이 나옵니다. 열전도도에서 평균 자유 행로 ℓ이 하던 역할을 경계에서는 투과율 τ₁₂가 합니다 (Lecture 12 슬라이드의 손글씨 메모). τ₁₂ = 1이 G의 상한입니다.</div>
+          <div class="d-look">τ₁₂ 슬라이더를 움직이면 G가 비례해서 바뀝니다(표시줄).</div>
+        </div>
+        <div class="d-step" data-fig="kap" data-hl="c3b" data-act="sidia">
+          <div class="d-math">\(L_K = \dfrac{\kappa}{G},\qquad R_\text{total} = \dfrac{L}{\kappa A} + \dfrac{1}{GA}\)</div>
+          <div class="d-why">Kapitza 길이: 경계 하나가 κ인 물질 몇 두께만큼의 저항인지. Si(κ = 140 W/mK) 기준으로 3C-SiC/Si 경계(G = 600 MW/m²K)는 233 nm, Si/다이아몬드(G = 70)는 2 μm입니다 (Lecture 12, Cheng 2022). 다이아몬드 기판이 열을 잘 빼 주려면 경계가 좋아야 하는 이유입니다.</div>
+          <div class="d-look">G = 70 MW/m²K로 맞췄습니다. 계단 ΔT가 Si 2 μm에서의 온도 강하와 같습니다(주황 괄호).</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>경계 열저항은 포논이 경계에서 일부 반사되기 때문에 생깁니다. G = ¼∫Cvτ₁₂는 κ = ⅓∫Cvℓ과 같은 모양이고, 남은 문제는 τ₁₂를 어떻게 구하느냐입니다(STEP 4). 소자가 작아질수록 경계 몫이 덩어리 몫보다 커집니다.</p>
+        <details><summary>확인 질문: 두께 200 nm인 Si 막 아래에 G = 70 MW/m²K 경계가 있다면, 막과 경계 중 어느 쪽 저항이 큰가요?</summary><p>경계 쪽이 10배 큽니다. Kapitza 길이가 2 μm이므로 경계 하나가 Si 2 μm와 같은 저항이고, 막은 0.2 μm뿐입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">경계에 닿는 포논 (색 = 출발한 쪽의 온도). <span style="color:var(--wave2)">┃ 경계, ○ 반사</span>. 아래 막대 = 경계 양쪽 포논의 평균 온도</p><canvas id="c3a" style="height:220px"></canvas></div>
+    <div class="card"><p class="cap">온도 분포 (Si | 경계 | Si, 열 흐름 q = 10⁹ W/m², 양쪽 각 2 μm). <span style="color:var(--accent)">┃ 계단 ΔT = q/G, ⟷ 같은 저항의 Si 두께 L<sub>K</sub></span></p><canvas id="c3b" style="height:190px"></canvas></div>
+    <div class="card controls">
+      <label>투과율 τ₁₂ <input type="range" id="t3" min="-2" max="0" step="0.01" value="-0.6"></label>
+      <div class="readout" id="r3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4 · Lecture 12 Acoustic and diffuse mismatch models</div>
+    <h2>τ₁₂를 구하는 두 극단: AMM과 DMM</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>경계가 매끈하면 포논은 거울처럼 반사되거나 굴절해서 넘어가고, 넘어가는 몫은 8장의 임피던스 식이 정합니다(AMM). 경계가 거칠면 포논은 경계에서 모든 방향으로 흩어지고, 어느 쪽에서 왔는지 잊어버립니다(DMM). 두 모형은 같은 경계에 대해 꽤 다른 τ₁₂를 줍니다.</p>
+      <p class="try">해 보기: 두 모형을 번갈아 눌러 보세요. 그다음 음속 비를 1로 두세요. 똑같은 물질끼리인데 DMM은 왜 절반만 넘어갈까요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-fig="amm" data-hl="c4a c4b" data-act="amm">
+          <div class="d-math">\(\text{AMM:}\quad \tau_{12} = \dfrac{4Z_1Z_2}{(Z_1+Z_2)^2},\qquad \dfrac{\sin\theta_i}{v_1} = \dfrac{\sin\theta_t}{v_2}\)</div>
+          <div class="d-why">음향 불일치 모형. 포논을 평면 음파로 보고 8장 STEP 4의 투과율과 Snell 법칙(Lecture 12)으로 방향을 정합니다. 방향 기억이 남는(거울 반사) 경계입니다.</div>
+          <div class="d-look">AMM으로 바꿨습니다. 반사는 거울 방향, 투과는 꺾인 방향 하나뿐입니다.</div>
+        </div>
+        <div class="d-step" data-fig="ammT" data-hl="c4b">
+          <div class="d-math">\(T < 30\,\text{K:}\quad G \propto T^3\)</div>
+          <div class="d-why">저온에서는 포논 파장이 길어 경계의 거칠기가 보이지 않으므로(8장 STEP 3의 D ≪ λ) AMM이 잘 맞고, G는 비열처럼 T³으로 변합니다(Lecture 12, Swartz & Pohl). 상온의 짧은 파장 포논에게는 원자 크기 거칠기도 커서 흩어집니다.</div>
+          <div class="d-look">그래프의 파랑 곡선 = AMM.</div>
+        </div>
+        <div class="d-step" data-fig="dmm" data-hl="c4a" data-act="dmm">
+          <div class="d-math">\(\text{DMM:}\quad \tau_{12} = 1 - \tau_{21}\)</div>
+          <div class="d-why">확산 불일치 모형. 경계에서 흩어진 포논은 어느 쪽에서 왔는지 잊으므로, 2쪽으로 나갈 확률이 출발한 쪽과 무관합니다. 1에서 온 포논에게 그것은 투과(τ₁₂)이고, 2에서 온 포논에게는 반사(1 − τ₂₁)이므로 둘이 같습니다.</div>
+          <div class="d-look">DMM으로 바꿨습니다. 반사와 투과 모두 방향이 제멋대로입니다.</div>
+        </div>
+        <div class="d-step" data-fig="balance" data-hl="c4a">
+          <div class="d-math">\(v_1 D_1\,\tau_{12} = v_2 D_2\,\tau_{21}\)</div>
+          <div class="d-why">상세 균형: 양쪽 온도가 같으면 1→2와 2→1 흐름이 같아야 합니다(STEP 3). 진동수마다 "경계로 오는 포논 수 × 투과율"이 같다는 뜻입니다.</div>
+          <div class="d-look">그림은 1에서 오는 포논만 그렸습니다.</div>
+        </div>
+        <div class="d-step key" data-fig="dmmT" data-hl="c4b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\tau_{12} = \dfrac{v_2D_2}{v_1D_1+v_2D_2} = \dfrac{1/v_2^2}{1/v_1^2 + 1/v_2^2}\quad \Big(D \propto \tfrac{\omega^2}{v^3}\Big)\)</div>
+          <div class="d-why">앞의 두 줄을 풀면 나옵니다. Debye 상태 밀도(3장)를 넣으면 음속만 남습니다. 느린 쪽(상태가 많은 쪽)으로 더 잘 넘어갑니다.</div>
+          <div class="d-look">그래프의 주황 곡선 = DMM.</div>
+        </div>
+        <div class="d-step" data-fig="same" data-hl="c4a c4b" data-act="same">
+          <div class="d-math">\(v_1 = v_2:\quad \tau_\text{AMM} = 1,\qquad \tau_\text{DMM} = \tfrac12\)</div>
+          <div class="d-why">같은 물질끼리라도 DMM은 경계가 있다는 것만으로 절반을 돌려보냅니다(기억을 잃으니 양쪽으로 반씩). 실제 경계는 대개 두 극단 사이이고, 상온 측정값은 모형마다 크게 다릅니다(Lecture 12, Al/Si).</div>
+          <div class="d-look">음속 비를 1로 바꿨습니다.</div>
+        </div>
+        <div class="d-step" data-fig="inter" data-hl="c4b">
+          <div class="d-math">\(\text{중간층: 양쪽과 상태 밀도가 겹치는 물질}\)</div>
+          <div class="d-why">두 물질의 포논 진동수 범위가 많이 다르면 넘어갈 상대 모드가 적어 τ₁₂가 작습니다. 양쪽과 상태 밀도가 겹치는 얇은 중간층을 넣으면 다리 역할을 해서 G가 커집니다. Ga₂O₃ 소자를 사파이어에 붙일 때 5 nm HfO₂ 층을 넣어 온도 상승이 줄어든 예가 있습니다(Lecture 12, Noh 2022).</div>
+          <div class="d-look">그림에는 넣지 않았습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>AMM은 경계를 매끈한 거울로, DMM은 기억을 지우는 거친 면으로 보는 두 극단입니다. 저온의 긴 파장 포논에는 AMM이 맞고, 상온에서는 그 사이 어딘가입니다. 어느 쪽이든 두 물질의 포논이 비슷할수록(임피던스, 상태 밀도) 잘 넘어갑니다.</p>
+        <details><summary>확인 질문: v₂ = 2v₁일 때 AMM과 DMM 중 어느 쪽이 더 많이 투과시키나요?</summary><p>AMM: 4·2/(1+2)² ≈ 0.89 (밀도가 같을 때). DMM: (1/4)/(1 + 1/4) = 0.2. 빠른 쪽은 상태 밀도가 작아서, 기억을 잃는 DMM에서는 그쪽으로 잘 가지 않습니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">물질 1(왼쪽)에서 경계로 오는 포논. 오른쪽 = <span style="color:var(--wave2)">물질 2</span>, 속력은 음속에 비례해서 그렸습니다.</p><canvas id="c4a" style="height:230px"></canvas></div>
+    <div class="card"><p class="cap">투과율 τ₁₂ vs 음속 비 v₂/v₁ (밀도는 같다고 둠). <span style="color:var(--wave)">실선 = AMM</span>, <span style="color:var(--accent)">실선 = DMM</span>, ● = 지금 모형</p><canvas id="c4b" style="height:170px"></canvas></div>
+    <div class="card controls">
+      <div class="controls"><button class="primary" id="b4a">AMM (매끈한 경계)</button><button id="b4d">DMM (거친 경계)</button></div>
+      <label>음속 비 v₂/v₁ <input type="range" id="v4" min="-0.301" max="0.301" step="0.001" value="0.301"></label>
+      <div class="readout" id="r4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 정리 -->
+<section class="summary" id="sum">
+  <h2>정리: 경계면이 만드는 것 (Lecture 12)</h2>
+  <p>경계면 하나는 임피던스 차이만큼 반사합니다. 경계면이 여럿이면 반사파들의 위상이 결과를 정하고, 포논에게 경계는 열저항이 됩니다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>무엇이 정하나</th><th>결과</th></tr></thead>
+      <tbody>
+        <tr><th>경계 하나 (8장)</th><td>임피던스 차이</td><td>R = ((Z₁ − Z₂)/(Z₁ + Z₂))²</td></tr>
+        <tr><th>얇은 막 (STEP 1)</th><td>두 반사파의 위상 차 Δφ = 4πn₂d/λ</td><td>λ/4 막: 반사 감소, λ/2 막: 막이 없는 것과 같음</td></tr>
+        <tr><th>주기 다층막 (STEP 2)</th><td>한 주기 왕복 위상 = 2π (Bragg)</td><td>정지 대역에서 R → 1, 포논 초격자에서는 미니 갭</td></tr>
+        <tr><th>경계 열저항 (STEP 3)</th><td>포논 투과율 τ₁₂</td><td>G = ¼∫Cvτ₁₂ dω, Kapitza 길이 κ/G</td></tr>
+        <tr><th>τ₁₂ 모형 (STEP 4)</th><td>매끈함(AMM) vs 거칠음(DMM)</td><td>AMM: 임피던스, DMM: 상태 밀도 × 음속</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_10_coherence.html">10장으로 →</a> (Lecture 13).</b> 넘어갈 수 없는 쪽으로도 파동은 조금 스며듭니다(소멸파). 그 너머가 가까우면 건너가는 터널링, 그리고 파동의 위상이 언제 유지되고 언제 깨지는지(결맞음), 무질서가 강하면 파동이 갇히는 Anderson 국재화를 봅니다.</p>
+</section>
+
+<footer>
+  <p>STEP 1은 공기(n = 1) / MgF₂(1.38) / 유리(1.5), 수직 입사입니다. 위 그림의 두 반사파는 첫 두 반사만 그린 것이고, 그래프의 실선은 막 안의 여러 번 반사까지 넣은 전달 행렬 값입니다. STEP 2는 Lecture 12 그림의 값(n₁ = 3, d₁ = 41.7 nm, n₂ = 3.5, d₂ = 35.2 nm)을 수직 입사로 계산했고, 다층막 양쪽은 n = 3인 매질로 두었습니다. 양쪽을 공기로 두면 다층막 전체가 굴절률이 큰 두꺼운 판처럼 작용해 대역 밖에서도 반사가 70%까지 출렁여 정지 대역이 덜 드러납니다. 이 값의 정지 대역은 1/λ ≈ 1.91–2.12 μm⁻¹입니다(N = 40에서 R &gt; 0.9). STEP 3의 G는 Si 근처 값 C = 1.66 MJ/m³K, v = 6.4 km/s와 진동수에 무관한 τ₁₂로 둔 ¼Cvτ₁₂이고, 위 그림은 한 방향으로만 달리는 포논을 그린 모형입니다. STEP 4는 두 물질의 밀도가 같다고 두어 Z₂/Z₁ = v₂/v₁이고, AMM의 투과 확률은 각도와 무관하게 수직 입사 값을 썼습니다(그림의 입사각은 ±25° 이내).</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+function readHot() { C.hot = css('--hot'); }
+readHot();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readHot);
+// 에너지 → 색 (차가움 = 파랑, 뜨거움 = 빨강)
+function heat(e, lo, hi) {
+  const t = Math.max(0, Math.min(1, (e - lo) / (hi - lo)));
+  const a = [37, 99, 235], b = [201, 42, 42];
+  return `rgb(${a.map((v, i) => Math.round(v + t * (b[i] - v))).join(',')})`;
+}
+
+// ------------------------------------------------------------------ 공용: 전달 행렬 (수직 입사, 실수 굴절률)
+// 복소수 = [re, im], 2×2 행렬 = [m00, m01, m10, m11]
+const cm = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+const ca = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const cs = (a, k) => [a[0] * k, a[1] * k];
+const cdiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+const cabs = a => Math.hypot(a[0], a[1]);
+function layerM(n, phi) {          // (E,H)(앞) = M (E,H)(뒤)
+  const c = Math.cos(phi), s = Math.sin(phi);
+  return [[c, 0], [0, -s / n], [0, -n * s], [c, 0]];
+}
+function mmul(A, B) {
+  return [ca(cm(A[0], B[0]), cm(A[1], B[2])), ca(cm(A[0], B[1]), cm(A[1], B[3])),
+          ca(cm(A[2], B[0]), cm(A[3], B[2])), ca(cm(A[2], B[1]), cm(A[3], B[3]))];
+}
+function stackM(layers, lam) {
+  let M = [[1, 0], [0, 0], [0, 0], [1, 0]];
+  for (const [n, d] of layers) M = mmul(M, layerM(n, 2 * Math.PI * n * d / lam));
+  return M;
+}
+function reflect(layers, n0, ns, lam) {
+  const M = stackM(layers, lam);
+  const B = ca(M[0], cs(M[1], ns)), Cc = ca(M[2], cs(M[3], ns));
+  const r = cdiv(ca(cs(B, n0), cs(Cc, -1)), ca(cs(B, n0), Cc));
+  const Einc = cs(ca(cs(B, n0), Cc), 1 / (2 * n0));            // 투과 진폭 1일 때의 입사 진폭
+  return { r, R: cabs(r) ** 2, B, C: Cc, Einc };
+}
+
+// ------------------------------------------------------------------ STEP 1: 얇은 막 하나
+const q1 = document.getElementById('q1');
+const N0 = 1, NF = 1.38, NSUB = 1.5;
+const R1_ = ((N0 - NF) / (N0 + NF)) ** 2, R2_ = ((NF - NSUB) / (NF + NSUB)) ** 2;
+const RINC = R1_ + (1 - R1_) ** 2 * R2_ / (1 - R1_ * R2_);     // 확률을 더한 값
+const RBARE = ((N0 - NSUB) / (N0 + NSUB)) ** 2;
+const coatR = q => reflect([[NF, q / NF]], N0, NSUB, 1).R;     // q = n₂d/λ (λ = 1)
+const S1 = { t: 0 };
+function drawS1(dt) {
+  S1.t += dt;
+  const q = +q1.value, delta = 4 * Math.PI * q;
+  const r1 = (N0 - NF) / (N0 + NF), r2 = (2 * N0 / (N0 + NF)) * (2 * NF / (N0 + NF)) * (NF - NSUB) / (NF + NSUB);
+  let { g, w, h } = fit(document.getElementById('c1a'));
+  // 왼쪽: 층 그림
+  const ax = 8, fx = 70, fw = 8 + 44 * q / 0.75, gx = fx + fw, top = 18, bot = h - 18;
+  g.fillStyle = C.wave2; g.globalAlpha = 0.18; g.fillRect(fx, top, fw, bot - top); g.globalAlpha = 1;
+  g.fillStyle = C.grid; g.fillRect(gx, top, 26, bot - top);
+  text(g, '공기', ax, top - 4, C.muted); text(g, '막', fx + fw / 2, top - 4, C.wave2, 'center'); text(g, '유리', gx + 13, top - 4, C.muted, 'center');
+  const yIn = 40, yHit = 92;
+  arrow(g, ax + 4, yIn, fx, yHit, C.wave, 1.6, 6);
+  g.strokeStyle = C.wave; g.lineWidth = 1.3; g.setLineDash([3, 3]);
+  g.beginPath(); g.moveTo(fx, yHit); g.lineTo(gx, yHit + 16); g.lineTo(fx, yHit + 32); g.stroke(); g.setLineDash([]);
+  arrow(g, fx, yHit, ax + 4, yHit + 52, C.accent, 1.6, 6);
+  arrow(g, fx, yHit + 32, ax + 4, yHit + 84, C.accent, 1.6, 6);
+  text(g, '1', ax + 2, yHit + 66, C.accent); text(g, '2', ax + 2, yHit + 98, C.accent);
+  // 오른쪽: 두 반사파와 합
+  const x0 = 170, x1 = w - 10, kx = 2 * Math.PI / 60, om = 2.2, sc = 150;
+  const lanes = [[36, '1 앞면', r1, 0], [96, '2 뒷면', r2, delta], [h - 42, '합', null, 0]];
+  for (const [y, lab] of lanes) {
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    text(g, lab, x0 - 6, y + 4, C.fg, 'right');
+  }
+  lanes.forEach(([y, , amp, ph], i) => {
+    g.strokeStyle = i === 2 ? C.accent : C.wave; g.lineWidth = i === 2 ? 2.2 : 1.5; g.beginPath();
+    for (let px = x0; px <= x1; px += 1.5) {
+      const th = kx * (px - x0) - om * S1.t;
+      const v = i === 2 ? r1 * Math.cos(th) + r2 * Math.cos(th - delta) : amp * Math.cos(th - ph);
+      px === x0 ? g.moveTo(px, y - sc * v) : g.lineTo(px, y - sc * v);
+    }
+    g.stroke();
+  });
+  const rsum = Math.hypot(r1 + r2 * Math.cos(delta), r2 * Math.sin(delta));
+  text(g, `|r₁| = ${Math.abs(r1).toFixed(3)}`, x1, 14, C.muted, 'right');
+  text(g, `|r₂| = ${Math.abs(r2).toFixed(3)}`, x1, 74, C.muted, 'right');
+  text(g, `|합| = ${rsum.toFixed(3)}`, x1, h - 8, C.accent, 'right');
+  // 아래: R vs 두께
+  ({ g, w, h } = fit(document.getElementById('c1b')));
+  const f = frame(g, w, h, [0, 0.75], [0, 0.05], { l: 40, r: 12, t: 10, b: 26 });
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.y1); g.lineTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  [[0, '0'], [0.25, 'λ/4'], [0.5, 'λ/2'], [0.75, '3λ/4']].forEach(([v, s]) => text(g, s, f.X(v), f.y0 + 15, C.muted, 'center'));
+  [0, 0.02, 0.04].forEach(v => text(g, `${v * 100}%`, f.x0 - 6, f.Y(v) + 4, C.muted, 'right'));
+  g.strokeStyle = C.muted; g.lineWidth = 1.2; g.setLineDash([6, 4]);
+  g.beginPath(); g.moveTo(f.x0, f.Y(RBARE)); g.lineTo(f.x1, f.Y(RBARE)); g.stroke();
+  g.setLineDash([2, 3]); g.beginPath(); g.moveTo(f.x0, f.Y(RINC)); g.lineTo(f.x1, f.Y(RINC)); g.stroke(); g.setLineDash([]);
+  text(g, '코팅 없음', f.x1 - 4, f.Y(RBARE) - 4, C.muted, 'right');
+  text(g, '확률을 더하면', f.x1 - 4, f.Y(RINC) - 4, C.muted, 'right');
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= 150; i++) { const v = 0.75 * i / 150, y = f.Y(coatR(v)); i ? g.lineTo(f.X(v), y) : g.moveTo(f.X(v), y); }
+  g.stroke();
+  const R = coatR(q);
+  atom(g, f.X(q), f.Y(R), 5, C.accent);
+  document.getElementById('r1').innerHTML =
+    `<span>n₂d/λ =</span> ${q.toFixed(3)} <span>&nbsp;Δφ =</span> ${(delta / Math.PI).toFixed(2)}π <span>&nbsp;R =</span> ${(R * 100).toFixed(2)}%<br><span>코팅 없음</span> ${(RBARE * 100).toFixed(1)}% <span>&nbsp;확률을 더하면</span> ${(RINC * 100).toFixed(1)}%`;
+}
+
+// ------------------------------------------------------------------ STEP 2: Bragg 거울
+const n2s = document.getElementById('n2'), w2 = document.getElementById('w2');
+const DBR = [[3, 41.7], [3.5, 35.2]];                          // Lecture 12 그림의 값 (nm)
+const dbr = N => Array.from({ length: 2 * N }, (_, i) => DBR[i % 2]);
+const NOUT = 3;                                               // 바깥 매질 = 막 1과 같은 물질
+let spec2 = null, specN = -1;
+function drawS2() {
+  const N = +n2s.value, k = +w2.value, lam = 1000 / k, layers = dbr(N);
+  if (specN !== N) { specN = N; spec2 = Array.from({ length: 301 }, (_, i) => { const kk = 1 + 2 * i / 300; return [kk, reflect(layers, NOUT, NOUT, 1000 / kk).R]; }); }
+  const res = reflect(layers, NOUT, NOUT, lam);
+  // 위: 막 속의 |E|
+  let { g, w, h } = fit(document.getElementById('c2a'));
+  const total = N * (DBR[0][1] + DBR[1][1]), air = Math.max(150, total * 0.12);
+  const x0 = 10, x1 = w - 10, X = z => x0 + (z + air) / (total + 2 * air) * (x1 - x0);
+  const yb = h - 22, sc = (yb - 12) / 2;
+  let z = 0;
+  layers.forEach(([n, d], i) => {
+    g.fillStyle = C.wave2; g.globalAlpha = i % 2 ? 0.28 : 0.12; g.fillRect(X(z), 10, Math.max(0.6, X(z + d) - X(z)), yb - 10); z += d;
+  });
+  g.globalAlpha = 1;
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, yb); g.lineTo(x1, yb); g.stroke();
+  text(g, '입사 = 1', x1, yb - sc - 4, C.muted, 'right');
+  g.strokeStyle = C.grid; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x0, yb - sc); g.lineTo(x1, yb - sc); g.stroke(); g.setLineDash([]);
+  // 앞쪽 공기: 입사 + 반사
+  const k0 = 2 * Math.PI * NOUT / lam, pts = [];
+  for (let zz = -air; zz <= 0; zz += air / 80) {
+    const e = ca([Math.cos(k0 * zz), Math.sin(k0 * zz)], cm(res.r, [Math.cos(-k0 * zz), Math.sin(-k0 * zz)]));
+    pts.push([zz, cabs(e)]);
+  }
+  // 막 속: 앞에서부터 M(−δz)로 행진, 입사 진폭 1로 정규화
+  let E = cdiv(res.B, res.Einc), H = cdiv(res.C, res.Einc);
+  z = 0;
+  for (const [n, d] of layers) {
+    const steps = Math.max(2, Math.ceil(d / 6)), dz = d / steps, ph = 2 * Math.PI * n * dz / lam, c = Math.cos(ph), s = Math.sin(ph);
+    for (let i = 0; i < steps; i++) {
+      const E2 = ca(cs(E, c), cm([0, s / n], H)), H2 = ca(cm([0, n * s], E), cs(H, c));
+      E = E2; H = H2; z += dz; pts.push([z, cabs(E)]);
+    }
+  }
+  const tAmp = cabs(E);
+  pts.push([total + air, tAmp]);
+  g.strokeStyle = C.wave; g.lineWidth = 1.8; g.beginPath();
+  pts.forEach(([zz, a], i) => { const y = yb - sc * Math.min(2, a); i ? g.lineTo(X(zz), y) : g.moveTo(X(zz), y); });
+  g.stroke();
+  text(g, `← 반사 R = ${res.R.toFixed(2)}`, x0, yb + 14, C.fg);
+  text(g, `투과 ${(1 - res.R).toFixed(2)} →`, x1, yb + 14, C.fg, 'right');
+  // 아래: R 스펙트럼
+  ({ g, w, h } = fit(document.getElementById('c2b')));
+  const f = frame(g, w, h, [1, 3], [0, 1], { l: 34, r: 12, t: 10, b: 26 });
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.y1); g.lineTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  [1, 1.5, 2, 2.5, 3].forEach(v => text(g, String(v), f.X(v), f.y0 + 15, C.muted, 'center'));
+  text(g, '1/λ (μm⁻¹)', f.x1, f.y0 - 4, C.muted, 'right');
+  [0, 0.5, 1].forEach(v => text(g, String(v), f.x0 - 6, f.Y(v) + 4, C.muted, 'right'));
+  text(g, 'R', f.x0 + 6, f.y1 + 8, C.muted);
+  g.strokeStyle = C.wave; g.lineWidth = 1.6; g.beginPath();
+  spec2.forEach(([kk, R], i) => i ? g.lineTo(f.X(kk), f.Y(R)) : g.moveTo(f.X(kk), f.Y(R)));
+  g.stroke();
+  g.strokeStyle = C.accent; g.lineWidth = 1.2; g.beginPath(); g.moveTo(f.X(k), f.y0); g.lineTo(f.X(k), f.y1); g.stroke();
+  atom(g, f.X(k), f.Y(res.R), 4.5, C.accent);
+  document.getElementById('r2').innerHTML =
+    `<span>N =</span> ${N} <span>쌍 (경계</span> ${2 * N}<span>개) &nbsp;1/λ =</span> ${k.toFixed(2)} μm⁻¹ <span>(λ =</span> ${lam.toFixed(0)} nm<span>)</span><br><span>R =</span> ${res.R.toFixed(3)} <span>&nbsp;Bragg 중심 1/λ =</span> ${(1000 / (2 * (3 * 41.7 + 3.5 * 35.2))).toFixed(2)} μm⁻¹`;
+}
+
+// ------------------------------------------------------------------ STEP 3: 경계 열저항
+const t3 = document.getElementById('t3');
+const CV4 = 1.66e6 * 6400 / 4;                                // ¼Cv (W/m²K), Si 근처 값
+const KSI = 140, Q3 = 1e9, L3 = 2e-6;                         // κ_Si, 열 흐름, 각 쪽 두께
+const S3 = { ps: [], hits: 0, pass: 0, flashes: [], tau: null };
+function initPh3() {
+  S3.ps = Array.from({ length: 70 }, (_, i) => ({ x: Math.random(), y: 0.08 + 0.84 * Math.random(), dir: Math.random() < 0.5 ? 1 : -1, T: 0 }));
+  S3.ps.forEach(p => { p.T = p.x < 0.5 ? 1 : 0; });
+}
+initPh3();
+function drawS3(dt) {
+  const tau = Math.pow(10, +t3.value), G = CV4 * tau;
+  if (S3.tau !== tau) { S3.tau = tau; S3.hits = 0; S3.pass = 0; }
+  const sp = 0.16;
+  for (const p of S3.ps) {
+    const old = p.x;
+    p.x += p.dir * sp * dt;
+    if ((old - 0.5) * (p.x - 0.5) < 0) {                     // 경계에 닿음
+      S3.hits++;
+      if (Math.random() < tau) S3.pass++;
+      else { p.x = 2 * 0.5 - p.x; p.dir *= -1; S3.flashes.push({ y: p.y, life: 0.5 }); }
+    }
+    if (p.x < 0) { p.x = -p.x; p.dir = 1; p.T = 1; }         // 왼쪽 끝 = 뜨거운 열원
+    if (p.x > 1) { p.x = 2 - p.x; p.dir = -1; p.T = 0; }     // 오른쪽 끝 = 차가운 열원
+  }
+  S3.flashes.forEach(f => f.life -= dt); S3.flashes = S3.flashes.filter(f => f.life > 0);
+  let { g, w, h } = fit(document.getElementById('c3a'));
+  const x0 = 14, x1 = w - 14, top = 14, bot = h - 62, X = v => x0 + v * (x1 - x0), Y = v => top + v * (bot - top);
+  g.fillStyle = C.hot; g.fillRect(x0 - 8, top, 6, bot - top);
+  g.fillStyle = C.wave; g.fillRect(x1 + 2, top, 6, bot - top);
+  g.strokeStyle = C.wave2; g.lineWidth = 3; g.beginPath(); g.moveTo(X(0.5), top); g.lineTo(X(0.5), bot); g.stroke();
+  for (const f of S3.flashes) { g.strokeStyle = C.wave2; g.globalAlpha = f.life * 2; g.lineWidth = 1.5; g.beginPath(); g.arc(X(0.5), Y(f.y), 9 * (1.4 - f.life), 0, 2 * Math.PI); g.stroke(); }
+  g.globalAlpha = 1;
+  for (const p of S3.ps) atom(g, X(p.x), Y(p.y), 3.6, heat(p.T, 0, 1));
+  text(g, '물질 1', X(0.25), bot + 14, C.muted, 'center'); text(g, '물질 2', X(0.75), bot + 14, C.muted, 'center');
+  // 양쪽 평균 온도
+  let sL = 0, nL = 0, sR = 0, nR = 0;
+  for (const p of S3.ps) if (p.x < 0.5) { sL += p.T; nL++; } else { sR += p.T; nR++; }
+  const aL = nL ? sL / nL : 0.5, aR = nR ? sR / nR : 0.5;
+  [[aL, 0.25], [aR, 0.75]].forEach(([a, c]) => {
+    g.fillStyle = heat(a, 0, 1); g.fillRect(X(c) - 40, bot + 22, 80, 16);
+    text(g, `평균 ${a.toFixed(2)}`, X(c), bot + 52, C.fg, 'center');
+  });
+  text(g, `계단 ${(aL - aR).toFixed(2)}`, X(0.5), bot + 34, C.accent, 'center');
+  // 아래: 온도 분포 (Si | 경계 | Si)
+  ({ g, w, h } = fit(document.getElementById('c3b')));
+  const dTb = Q3 * L3 / KSI, dTi = Q3 / G, Tend = 300, T0 = Tend + 2 * dTb + dTi;
+  const f = frame(g, w, h, [-2, 2], [295, 370], { l: 40, r: 12, t: 12, b: 26 });
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.y1); g.lineTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  [-2, -1, 0, 1, 2].forEach(v => text(g, `${v}`, f.X(v), f.y0 + 15, C.muted, 'center'));
+  text(g, 'μm', f.x1, f.y0 - 4, C.muted, 'right');
+  [300, 330, 360].forEach(v => text(g, `${v}`, f.x0 - 6, f.Y(v) + 4, C.muted, 'right'));
+  text(g, 'T (K)', f.x0 + 6, f.y1 + 8, C.muted);
+  g.strokeStyle = C.wave2; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+  g.beginPath(); g.moveTo(f.X(0), f.y0); g.lineTo(f.X(0), f.y1); g.stroke(); g.setLineDash([]);
+  const Ta = T0 - dTb, Tb = Ta - dTi;
+  g.strokeStyle = C.hot; g.lineWidth = 2.2; g.beginPath();
+  g.moveTo(f.X(-2), f.Y(Math.min(370, T0))); g.lineTo(f.X(0), f.Y(Ta)); g.stroke();
+  g.beginPath(); g.moveTo(f.X(0), f.Y(Tb)); g.lineTo(f.X(2), f.Y(Tend)); g.stroke();
+  g.strokeStyle = C.accent; g.lineWidth = 2.5; g.beginPath(); g.moveTo(f.X(0), f.Y(Ta)); g.lineTo(f.X(0), f.Y(Tb)); g.stroke();
+  text(g, `ΔT = q/G = ${dTi.toFixed(1)} K`, f.X(0) + 6, f.Y((Ta + Tb) / 2) + 4, C.accent);
+  // Kapitza 길이: 같은 온도 강하를 내는 Si 두께
+  const LK = KSI / G * 1e6;                                   // μm
+  if (LK > 0.02) {
+    const y = f.y1 + 20, xa = f.X(0), xb = f.X(Math.min(2, LK));
+    g.strokeStyle = C.accent; g.lineWidth = 1.3;
+    g.beginPath(); g.moveTo(xa, y); g.lineTo(xb, y); g.moveTo(xa, y - 4); g.lineTo(xa, y + 4); g.moveTo(xb, y - 4); g.lineTo(xb, y + 4); g.stroke();
+    text(g, `L_K = ${LK < 1 ? (LK * 1000).toFixed(0) + ' nm' : LK.toFixed(2) + ' μm'}${LK > 2 ? ' →' : ''}`, xa + 6, y - 6, C.accent);
+  }
+  document.getElementById('r3').innerHTML =
+    `<span>τ₁₂ =</span> ${tau.toFixed(3)} <span>(잰 값</span> ${S3.hits ? (S3.pass / S3.hits).toFixed(2) : '–'}<span>) &nbsp;G = ¼Cvτ₁₂ =</span> ${(G / 1e6).toFixed(0)} MW/m²K<br><span>ΔT =</span> ${dTi.toFixed(1)} K <span>&nbsp;Kapitza 길이 κ_Si/G =</span> ${LK < 1 ? (LK * 1000).toFixed(0) + ' nm' : LK.toFixed(2) + ' μm'}`;
+}
+
+// ------------------------------------------------------------------ STEP 4: AMM과 DMM
+const v4 = document.getElementById('v4');
+const b4a = document.getElementById('b4a'), b4d = document.getElementById('b4d');
+const S4 = { mode: 'amm', ps: [], clock: 0, hits: 0, pass: 0, key: '' };
+function setMode4(m) {
+  S4.mode = m; S4.ps = []; S4.hits = 0; S4.pass = 0;
+  b4a.classList.toggle('primary', m === 'amm'); b4d.classList.toggle('primary', m === 'dmm');
+}
+b4a.addEventListener('click', () => setMode4('amm'));
+b4d.addEventListener('click', () => setMode4('dmm'));
+const tAMM = r => 4 * r / (1 + r) ** 2;                      // 밀도 같음: Z₂/Z₁ = v₂/v₁ = r
+const tDMM = r => (1 / (r * r)) / (1 + 1 / (r * r));
+function drawS4(dt) {
+  const r = Math.pow(10, +v4.value), key = S4.mode + r;
+  if (key !== S4.key) { S4.key = key; S4.hits = 0; S4.pass = 0; }
+  const T = S4.mode === 'amm' ? tAMM(r) : tDMM(r);
+  let { g, w, h } = fit(document.getElementById('c4a'));
+  const xi = w / 2, s1 = 55;
+  S4.clock += dt;
+  while (S4.clock > 0.18) {                                   // 왼쪽에서 포논을 보낸다
+    S4.clock -= 0.18;
+    const th = (Math.random() * 2 - 1) * 25 * Math.PI / 180;
+    S4.ps.push({ x: 4, y: h * (0.25 + 0.5 * Math.random()), vx: s1 * Math.cos(th), vy: s1 * Math.sin(th), side: 1, tr: [], done: false });
+  }
+  for (const p of S4.ps) {
+    const ox = p.x;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (!p.done && p.side === 1 && ox < xi && p.x >= xi) {
+      p.done = true; S4.hits++;
+      const sinI = p.vy / s1;
+      if (Math.random() < T) {
+        S4.pass++; p.side = 2;
+        const s2 = s1 * r;
+        let sinT = S4.mode === 'amm' ? Math.max(-0.99, Math.min(0.99, sinI * r)) : Math.random() * 2 - 1;
+        p.vx = s2 * Math.sqrt(1 - sinT * sinT); p.vy = s2 * sinT;
+      } else {
+        if (S4.mode === 'amm') p.vx = -p.vx;
+        else { const sn = Math.random() * 2 - 1; p.vx = -s1 * Math.sqrt(1 - sn * sn); p.vy = s1 * sn; }
+      }
+      p.x = xi + (p.vx > 0 ? 0.5 : -0.5);
+      p.flash = 0.4;
+    }
+    if (p.flash) p.flash = Math.max(0, p.flash - dt);
+    p.tr.push([p.x, p.y]); if (p.tr.length > 14) p.tr.shift();
+  }
+  S4.ps = S4.ps.filter(p => p.x > -10 && p.x < w + 10 && p.y > -10 && p.y < h + 10);
+  g.fillStyle = C.wave2; g.globalAlpha = 0.08; g.fillRect(xi, 0, w - xi, h); g.globalAlpha = 1;
+  g.strokeStyle = C.wave2; g.lineWidth = 2;
+  g.beginPath();
+  if (S4.mode === 'amm') { g.moveTo(xi, 0); g.lineTo(xi, h); }
+  else for (let y = 0; y <= h; y += 4) { const x = xi + 3 * Math.sin(y * 0.9) + 2 * Math.sin(y * 2.3); y ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke();
+  text(g, '물질 1', 8, 14, C.muted); text(g, `물질 2 (v₂ = ${r.toFixed(2)} v₁)`, w - 8, 14, C.wave2, 'right');
+  for (const p of S4.ps) {
+    g.strokeStyle = C.wave; g.lineWidth = 1.4; g.globalAlpha = 0.35; g.beginPath();
+    p.tr.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.globalAlpha = 1;
+    atom(g, p.x, p.y, 3.2, C.wave);
+    if (p.flash) { g.strokeStyle = C.accent; g.globalAlpha = p.flash * 2.5; g.lineWidth = 1.5; g.beginPath(); g.arc(xi, p.y, 6, 0, 2 * Math.PI); g.stroke(); g.globalAlpha = 1; }
+  }
+  // 아래: τ₁₂ vs v₂/v₁
+  ({ g, w, h } = fit(document.getElementById('c4b')));
+  const f = frame(g, w, h, [-0.301, 0.301], [0, 1], { l: 34, r: 12, t: 10, b: 26 });
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.y1); g.lineTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  [[0.5, '0.5'], [Math.SQRT1_2, '0.71'], [1, '1'], [Math.SQRT2, '1.41'], [2, '2']].forEach(([v, s]) => text(g, s, f.X(Math.log10(v)), f.y0 + 15, C.muted, 'center'));
+  text(g, 'v₂/v₁', f.x1, f.y0 - 4, C.muted, 'right');
+  [0, 0.5, 1].forEach(v => text(g, String(v), f.x0 - 6, f.Y(v) + 4, C.muted, 'right'));
+  text(g, 'τ₁₂', f.x0 + 6, f.y1 + 8, C.muted);
+  [[tAMM, C.wave, 'AMM'], [tDMM, C.accent, 'DMM']].forEach(([fn, col, lab]) => {
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+    for (let i = 0; i <= 100; i++) { const l = -0.301 + 0.602 * i / 100, y = f.Y(fn(Math.pow(10, l))); i ? g.lineTo(f.X(l), y) : g.moveTo(f.X(l), y); }
+    g.stroke();
+  });
+  text(g, 'AMM', f.X(0), f.Y(1) + 14, C.wave, 'center');
+  text(g, 'DMM', f.X(-0.28), f.Y(tDMM(Math.pow(10, -0.28))) - 6, C.accent);
+  const lr = Math.log10(r);
+  g.strokeStyle = C.muted; g.lineWidth = 1; g.setLineDash([3, 3]);
+  g.beginPath(); g.moveTo(f.X(lr), f.y0); g.lineTo(f.X(lr), f.y1); g.stroke(); g.setLineDash([]);
+  atom(g, f.X(lr), f.Y(T), 5, S4.mode === 'amm' ? C.wave : C.accent);
+  document.getElementById('r4').innerHTML =
+    `<span>v₂/v₁ = Z₂/Z₁ =</span> ${r.toFixed(2)} <span>&nbsp;AMM τ₁₂ =</span> ${tAMM(r).toFixed(2)} <span>&nbsp;DMM τ₁₂ =</span> ${tDMM(r).toFixed(2)}<br><span>지금 (${S4.mode.toUpperCase()}) 넘어간 비율:</span> ${S4.hits ? (S4.pass / S4.hits).toFixed(2) : '–'} <span>(${S4.hits}개 중)</span>`;
+}
+
+// ------------------------------------------------------------------ 줄에 맞춰 그림 바꾸기
+const ACTS9 = {
+  s1: a => { q1.value = a === 'q' ? 0.25 : 0.5; },
+  s2: a => { if (a === 'many') n2s.value = 40; w2.value = a === 'out' ? 1.5 : 2.01; },
+  s3: a => { t3.value = Math.log10(70e6 / CV4).toFixed(2); },
+  s4: a => { if (a === 'same') v4.value = 0; else setMode4(a); },
+};
+
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs(ACTS9);
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

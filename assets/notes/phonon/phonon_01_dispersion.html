@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원자 사슬과 분산 관계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 3 §4 Lattice vibrations and Phonons</div>
+  <h1>1장. 원자 하나의 진동에서 분산 관계 ω(k)까지</h1>
+  <p>용수철에 매달린 원자 하나에서 시작해서, 원자들이 서로 연결되면 왜 파동이 생기고 그 파동의 진동수가 왜 파수 k에 따라 정해지는지를 따라갑니다. </p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <nav class="toc" aria-label="단계">
+    <a href="#s1"><b>1</b>단일 조화 진동자</a>
+    <a href="#s2"><b>2</b>이웃과 연결된 원자</a>
+    <a href="#s3"><b>3</b>파동 해 넣어 보기</a>
+    <a href="#s4"><b>4</b>분산 관계 읽기</a>
+    <a href="#s5"><b>5</b>주기 경계 조건과 모드 개수</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1</div>
+    <h2>단일 조화 진동자: 원자 하나, 용수철 하나</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>평형 위치에서 \(x\) 만큼 벗어난 원자는 되돌리는 힘을 받습니다. 힘이 변위에 비례하면 조화 진동자입니다.</p>
+      <p class="try">해 보기: K와 M 슬라이더를 움직여 보세요. 진폭은 그대로인데 무엇이 바뀌나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-fig="force" data-hl="c1a c1b">
+          <div class="d-math">\(F = -Kx, \qquad U = \tfrac12 K x^2\)</div>
+          <div class="d-why">K: 용수철 상수. 퍼텐셜은 포물선 우물입니다.</div>
+          <div class="d-look">주황 화살표는 늘 x = 0 쪽을 향하고, 멀어질수록 길어집니다. 아래 왼쪽 포물선이 U입니다.</div>
+        </div>
+        <div class="d-step" data-fig="newton" data-hl="c1a">
+          <div class="d-math">\(M\ddot x = -Kx\)</div>
+          <div class="d-why">뉴턴 제2법칙</div>
+          <div class="d-look">화살표(힘)가 원자를 가속시켜 다시 가운데로 되돌립니다.</div>
+        </div>
+        <div class="d-step" data-fig="cos" data-hl="c1c">
+          <div class="d-math">\(x(t) = A\cos\omega t \;\Rightarrow\; -M\omega^2 A\cos\omega t = -KA\cos\omega t\)</div>
+          <div class="d-why">코사인을 넣으면 양변의 시간 의존성이 같아집니다.</div>
+          <div class="d-look">오른쪽 아래 x(t)가 코사인 모양입니다.</div>
+        </div>
+        <div class="d-step key" data-fig="omega" data-hl="c1c">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\omega = \sqrt{K/M}\)</div>
+          <div class="d-why">진동수는 진폭과 무관하고 K와 M으로만 정해집니다. 오른쪽에서 K, M을 바꿔 보세요.</div>
+          <div class="d-look">x(t)에 주기 T = 2π/ω를 표시했습니다. K를 4배로 하면 주기가 절반이 됩니다.</div>
+        </div>
+        <div class="d-step" data-fig="quant" data-hl="c1b">
+          <div class="d-math">\(E_n = \left(n + \tfrac12\right)\hbar\omega\)</div>
+          <div class="d-why">양자역학에서는 에너지가 ħω 단위로 띄엄띄엄합니다 (Lecture 1). 이 에너지 덩어리가 나중의 '포논'입니다.</div>
+          <div class="d-look">퍼텐셜 우물에 허용된 에너지 칸이 나타납니다. K나 M을 바꾸면 칸 간격 ħω가 바뀝니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>진동수는 "얼마나 세게 되돌리나(K)"와 "얼마나 무거운가(M)"로만 정해지고 진폭과 무관합니다. 이 성질 덕분에 원자가 여러 개일 때도 진동을 진동수로 구분할 수 있습니다.</p>
+        <details><summary>확인 질문: M을 4배로 하면 주기는 어떻게 될까요?</summary><p>ω = √(K/M)이 절반이 되므로 주기 T = 2π/ω는 2배가 됩니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">원자와 용수철. 주황 화살표 = 되돌리는 힘 F = −Kx</p><canvas id="c1a" style="height:120px"></canvas></div>
+    <div class="row2">
+      <div class="card"><p class="cap">퍼텐셜 우물 U = ½Kx²</p><canvas id="c1b" style="height:170px"></canvas></div>
+      <div class="card"><p class="cap">시간에 따른 변위 x(t)</p><canvas id="c1c" style="height:170px"></canvas></div>
+    </div>
+    <div class="card controls">
+      <label>K <input type="range" id="k1" min="0.3" max="4" step="0.1" value="1"></label>
+      <label>M <input type="range" id="m1" min="0.3" max="4" step="0.1" value="1"></label>
+      <div class="readout" id="r1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2</div>
+    <h2>이웃과 연결된 원자: 혼자 진동하지 않는다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>결정 속 원자는 양옆 원자와 용수철로 이어져 있습니다. 원자 하나를 당겼다 놓으면 그 움직임이 이웃으로 퍼져 나갑니다. 오른쪽 사슬에서 원자를 눌러 고른 뒤 <b>당겼다 놓기</b>를 눌러 보세요.</p>
+      <p class="try">해 보기: 원자를 하나 골라 당겼다 놓고, 주황 합력 화살표가 언제 커지는지 보세요. 이웃과 같은 쪽으로 움직일 때와 반대로 움직일 때를 비교해 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-fig="u" data-hl="c2a c2b">
+          <div class="d-math">\(u_j = x_j - x_{j,0}\)</div>
+          <div class="d-why">원자 j가 평형 위치에서 벗어난 변위</div>
+          <div class="d-look">사슬의 작은 눈금이 평형 위치이고, 선택한 원자가 눈금에서 벗어난 거리가 u<sub>j</sub>입니다. 아래 막대 하나가 원자 하나의 u<sub>j</sub>입니다.</div>
+        </div>
+        <div class="d-step" data-fig="right" data-hl="c2a">
+          <div class="d-math">오른쪽 용수철이 늘어난 길이: \(u_{j+1} - u_j\) → 원자 j를 오른쪽으로 \(K(u_{j+1}-u_j)\) 만큼 당김</div>
+          <div class="d-look">파란 화살표만 남겼습니다. 오른쪽 이웃이 더 멀리 가 있으면 오른쪽으로 당깁니다.</div>
+        </div>
+        <div class="d-step" data-fig="left" data-hl="c2a">
+          <div class="d-math">왼쪽 용수철이 늘어난 길이: \(u_j - u_{j-1}\) → 원자 j를 왼쪽으로 \(K(u_j-u_{j-1})\) 만큼 당김</div>
+          <div class="d-look">보라 화살표만 남겼습니다.</div>
+        </div>
+        <div class="d-step" data-fig="net" data-hl="c2a">
+          <div class="d-math">\(F_j = K(u_{j+1}-u_j) - K(u_j-u_{j-1})\)</div>
+          <div class="d-why">오른쪽 그림의 두 화살표를 더한 것이 합력입니다.</div>
+          <div class="d-look">주황 합력 = 파랑 + 보라. 아래 표시줄의 숫자로도 확인하세요.</div>
+        </div>
+        <div class="d-step key" data-fig="eom" data-hl="c2a c2b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(M\ddot u_j = K\,(u_{j+1} + u_{j-1} - 2u_j)\)</div>
+          <div class="d-why">원자 j의 운동이 이웃 u<sub>j±1</sub>에 묶여 있습니다. N개 원자에 대해 N개의 연립 방정식입니다.</div>
+          <div class="d-look">모든 원자가 매 순간 이 식을 따른 결과가 지금 보는 운동입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c2a">
+          <div class="d-math">가정: 최근접 이웃만 상호작용, 조화 퍼텐셜, 모든 원자의 질량과 간격 a가 같음</div>
+          <div class="d-look">그림의 모든 용수철은 같은 K이고, 원자는 질량과 간격이 같습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>원자에 걸리는 힘은 자기 변위가 아니라 "이웃과의 차이"로 정해집니다. 그래서 원자들은 따로 진동하지 못하고 움직임이 이웃으로 전해져 파동이 됩니다. 원자 하나만 당겨도 시간이 지나면 모든 원자가 복잡하게 움직이는데, 이것을 간단히 푸는 방법이 다음 단계의 파동 해입니다.</p>
+        <details><summary>확인 질문: 모든 원자가 똑같이 u만큼 움직이면 합력은?</summary><p>u<sub>j+1</sub> − u<sub>j</sub> = 0이라 용수철이 늘어나지 않으므로 0입니다. 결정 전체가 평행이동할 뿐이고, STEP 4의 k = 0, ω = 0이 바로 이것입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">원자 사슬 (양 끝은 벽). 변위는 실제보다 크게 그렸습니다. 원자를 눌러 고르세요.</p><canvas id="c2a" style="height:150px"></canvas></div>
+    <div class="card"><p class="cap">같은 순간의 변위 u<sub>j</sub> (가로 변위를 세로 막대로 세움)</p><canvas id="c2b" style="height:150px"></canvas></div>
+    <div class="card controls">
+      <button class="primary" id="b2pull">선택한 원자 당겼다 놓기</button>
+      <button id="b2play">일시정지</button>
+      <button id="b2zero">멈춰서 평형으로</button>
+      <div class="readout" id="r2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3</div>
+    <h2>파동 해를 넣어 보기</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>모든 원자가 같은 진동수 ω로, 이웃끼리 일정한 위상차를 두고 움직이는 해를 추측합니다. 오른쪽 아래의 화살표(위상자)가 원자 j−1, j, j+1의 위상이고, 이웃 사이의 위상차가 정확히 ka입니다.</p>
+      <p class="try">해 보기: ka 슬라이더를 움직이며 위상자 화살표 사이 각도와 표시줄의 ω가 함께 어떻게 변하는지 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-hl="c3a c3b">
+          <div class="d-math">\(u_j = A\,e^{i(kja - \omega t)}\)</div>
+          <div class="d-why">실수부가 실제 변위입니다. 원자 j의 위치는 x = ja.</div>
+          <div class="d-look">파란 곡선이 A cos(kx − ωt)이고, 원자(점)는 x = ja에서만 그 값을 가집니다.</div>
+        </div>
+        <div class="d-step" data-fig="neighbor" data-hl="c3c">
+          <div class="d-math">\(u_{j\pm1} = A\,e^{i(k(j\pm1)a - \omega t)} = u_j\,e^{\pm ika}\)</div>
+          <div class="d-why">이웃은 같은 파동에서 위상만 ka만큼 앞서거나 뒤처집니다.</div>
+          <div class="d-look">위상자 j−1, j, j+1이 정확히 ka씩 돌아가 있습니다 (주황 호).</div>
+        </div>
+        <div class="d-step" data-hl="c3b">
+          <div class="d-math">\(\ddot u_j = -\omega^2 u_j\)</div>
+          <div class="d-look">모든 원자가 같은 ω로 위아래로 진동합니다.</div>
+        </div>
+        <div class="d-step" data-fig="neighbor" data-hl="c3c">
+          <div class="d-math">\(-M\omega^2 u_j = K\left(e^{ika} + e^{-ika} - 2\right)u_j\)</div>
+          <div class="d-why">STEP 2의 운동 방정식에 대입. 모든 j에서 u<sub>j</sub>가 약분됩니다.</div>
+          <div class="d-look">j가 약분되어 이웃의 위상 e<sup>±ika</sup>만 남았습니다. 이 해가 모든 원자에 동시에 성립한다는 뜻입니다.</div>
+        </div>
+        <div class="d-step" data-fig="neighbor" data-hl="c3c">
+          <div class="d-math">\(e^{ika} + e^{-ika} = 2\cos ka\)</div>
+          <div class="d-look">양옆 위상자(±ka)의 가로 성분을 더하면 2cos ka입니다.</div>
+        </div>
+        <div class="d-step">
+          <div class="d-math">\(-M\omega^2 = 2K(\cos ka - 1) = -4K\sin^2\!\tfrac{ka}{2}\)</div>
+          <div class="d-why">1 − cos θ = 2 sin²(θ/2)</div>
+          <div class="d-look">삼각함수 항등식만 쓴 단계입니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c3a">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\omega_k = 2\sqrt{\dfrac{K}{M}}\,\left|\sin\dfrac{ka}{2}\right|\)</div>
+          <div class="d-why">분산 관계. 파수 k가 정해지면 진동수가 하나로 정해집니다.</div>
+          <div class="d-look">표시줄의 ω가 이 식의 값입니다. ka를 π까지 올려 최댓값 2를 확인하세요.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>추측한 파동을 넣었더니 모든 원자에 대해 같은 식으로 줄어들었습니다. 그래서 원자 N개의 연립 방정식이 "k 하나당 식 하나"로 풀리고, 그 결과가 k와 ω를 잇는 분산 관계입니다.</p>
+        <details><summary>확인 질문: ka가 아주 작을 때 이웃 원자들은 어떻게 움직이나요?</summary><p>위상차가 거의 없어 거의 같이 움직입니다. 용수철이 조금만 늘어나 되돌리는 힘이 약하므로 ω가 작습니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">파동 하나만 있는 사슬. 주황 원자 = j−1, j, j+1</p><canvas id="c3a" style="height:110px"></canvas></div>
+    <div class="card"><p class="cap">변위 u<sub>j</sub>와 연속 파동 A cos(kx − ωt)</p><canvas id="c3b" style="height:150px"></canvas></div>
+    <div class="card"><p class="cap">위상자: 각 원자의 위상 kja − ωt. 이웃 사이 각도 = ka</p><canvas id="c3c" style="height:150px"></canvas></div>
+    <div class="card controls">
+      <label>ka <input type="range" id="k3" min="0.1" max="3.1416" step="0.01" value="0.8"></label>
+      <div class="readout" id="r3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4</div>
+    <h2>분산 관계 읽기</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>위 그래프에서 아무 곳이나 누르거나 끌어서 k를 고르세요. 아래 사슬이 그 k의 파동으로 움직입니다.</p>
+      <p class="try">해 보기: 그래프를 끌어 k = 0 근처, π/a, 그리고 영역 밖(2π/a 근처)을 차례로 가 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-hl="c4a" data-act="k:0.45">
+          <div class="d-math">\(k \to 0:\;\; \sin\frac{ka}{2} \approx \frac{ka}{2} \;\Rightarrow\; \omega \approx a\sqrt{K/M}\;k = v_s k\)</div>
+          <div class="d-why">파장이 긴 파동은 음파입니다. 기울기 v<sub>s</sub>가 음속이고, 점선이 Debye 모형 ω = v<sub>s</sub>k입니다 (Lecture 4).</div>
+          <div class="d-look">작은 k로 이동했습니다. 곡선과 점선(Debye 직선)이 거의 겹칩니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4b" data-act="k:0.03">
+          <div class="d-math">\(k = 0:\; \omega = 0\)</div>
+          <div class="d-why">모든 원자가 같이 움직입니다. 늘어나는 용수철이 없으니 되돌리는 힘도 없습니다.</div>
+          <div class="d-look">k ≈ 0으로 이동했습니다. 사슬 전체가 같이 움직입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4b c4c" data-act="k:3.1416">
+          <div class="d-math">\(k = \pi/a:\; \omega_{\max} = 2\sqrt{K/M}\)</div>
+          <div class="d-why">이웃 원자가 정반대로 움직여 용수철이 가장 많이 늘어납니다.</div>
+          <div class="d-look">k = π/a로 이동했습니다. 이웃 원자가 정반대로 움직입니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c4a" data-act="k:1.6">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(v_g = \dfrac{d\omega}{dk} = a\sqrt{\dfrac{K}{M}}\cos\dfrac{ka}{2}\)</div>
+          <div class="d-why">군속도 = 에너지가 전달되는 속도. 그래프의 접선 기울기이고, 영역 경계 k = π/a에서 0이 됩니다 (정상파).</div>
+          <div class="d-look">주황 접선의 기울기가 v<sub>g</sub>입니다. 그래프를 π/a 쪽으로 끌면 접선이 평평해집니다.</div>
+        </div>
+        <div class="d-step" data-hl="c4c" data-act="k:5.4">
+          <div class="d-math">\(\omega(k + G) = \omega(k),\quad G = 2\pi/a\)</div>
+          <div class="d-why">k를 G만큼 옮겨도 원자 위치에서의 값은 똑같습니다 (e<sup>iGja</sup> = 1). 첫 번째 브릴루앙 영역(−π/a, π/a] 바깥의 k를 골라 보세요. 두 파동이 같은 점을 지나갑니다.</div>
+          <div class="d-look">영역 밖 k로 이동했습니다. 파랑(k)과 보라(k − G) 두 파동이 같은 원자 위치를 지납니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>분산 곡선 하나에 파동의 정보가 다 들어 있습니다. 긴 파장은 음파(v<sub>s</sub>), 영역 경계는 정상파(v<sub>g</sub> = 0), 영역 밖의 k는 안쪽 k와 같은 운동입니다. 그래서 첫 번째 브릴루앙 영역만 보면 충분합니다.</p>
+        <details><summary>확인 질문: v<sub>p</sub> = ω/k와 v<sub>g</sub> = dω/dk가 같아지는 곳은?</summary><p>분산이 직선(ω ∝ k)인 k → 0 음파 영역입니다. 영역 경계에서는 v<sub>p</sub> ≠ 0이지만 v<sub>g</sub> = 0입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">ω(k). 파란 띠 = 첫 번째 브릴루앙 영역, 주황 선 = 접선(군속도)</p><canvas id="c4a" style="height:240px"></canvas></div>
+    <div class="card"><p class="cap">고른 k의 사슬 운동</p><canvas id="c4b" style="height:100px"></canvas></div>
+    <div class="card"><p class="cap">변위 u<sub>j</sub>. 영역 밖 k에서는 보라색 = k − G 로 접은 파동</p><canvas id="c4c" style="height:140px"></canvas></div>
+    <div class="card controls"><div class="readout" id="r4"></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="step" id="s5">
+  <div class="text">
+    <div class="num">STEP 5</div>
+    <h2>주기 경계 조건: 원자 N개에 모드 N개</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>실제 결정은 유한합니다. 표면 효과를 피하려고 사슬의 끝을 처음과 이어 고리로 만듭니다 (Born–von Kármán). 그러면 아무 k나 허용되지 않습니다.</p>
+      <p class="try">해 보기: N을 바꾸며 오른쪽 점의 개수를 세 보세요. 점을 눌러 고리의 움직임도 비교해 보세요.</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s5" tabindex="0">
+        <div class="d-step" data-hl="c5a">
+          <div class="d-math">\(u_{j+N} = u_j\)</div>
+          <div class="d-why">N번째 다음 원자는 다시 첫 원자. 고리 길이 L = Na.</div>
+          <div class="d-look">주황 원자가 1번이자 N+1번입니다. 고리를 한 바퀴 돌면 같은 원자입니다.</div>
+        </div>
+        <div class="d-step" data-hl="c5a">
+          <div class="d-math">\(e^{ikNa} = 1\)</div>
+          <div class="d-look">고리를 한 바퀴 돌았을 때 위상이 다시 맞아야 합니다.</div>
+        </div>
+        <div class="d-step key" data-hl="c5b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(k = \dfrac{2\pi}{Na}\,n,\qquad \Delta k = \dfrac{2\pi}{L}\)</div>
+          <div class="d-why">n은 정수. 허용되는 k가 띄엄띄엄 찍힙니다.</div>
+          <div class="d-look">점 사이 간격이 Δk = 2π/(Na)입니다. N을 키우면 촘촘해집니다.</div>
+        </div>
+        <div class="d-step" data-hl="c5b">
+          <div class="d-math">첫 번째 브릴루앙 영역 안의 서로 다른 k: \(n = -\tfrac N2 + 1, \dots, \tfrac N2\) → 정확히 N개</div>
+          <div class="d-why">원자 N개 = 진동 모드 N개. 결정이 커지면 점이 촘촘해져 연속 곡선처럼 됩니다.</div>
+          <div class="d-look">표시줄: 원자 N개 → 허용 k N개.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s5">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>결정이 유한하면 k가 띄엄띄엄 정해지고, 그 개수는 원자 수와 정확히 같습니다. 진동의 자유도가 원자 수만큼 있다는 뜻이고, 3장에서 상태 밀도를 셀 때 바로 이 점들을 셉니다.</p>
+        <details><summary>확인 질문: N = 8에서 k = π/a 모드가 있나요?</summary><p>n = 4이면 k = 2π·4/(8a) = π/a라서 있습니다. 이 모드에서는 이웃 원자가 정반대로 움직입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="row2">
+      <div class="card"><p class="cap">원자 N개짜리 고리. 원자는 고리를 따라 움직입니다.</p><canvas id="c5a" style="height:260px"></canvas></div>
+      <div class="card"><p class="cap">허용된 k (점). 점을 눌러 모드를 고르세요.</p><canvas id="c5b" style="height:260px"></canvas></div>
+    </div>
+    <div class="card controls">
+      <label>N <input type="range" id="n5" min="3" max="24" step="1" value="8"></label>
+      <div class="readout" id="r5"></div>
+    </div>
+  </div>
+</section>
+
+<section class="summary" id="sum">
+  <h2>정리: 원자 사슬에서 분산 관계까지 (Lecture 3)</h2>
+  <p>원자 하나의 진동수에서 출발해, 이웃과 연결되면 움직임이 파동이 되고, 그 파동의 진동수가 파수 k로 정해진다는 데까지 왔습니다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>단계</th><th>결과</th><th>뜻</th></tr></thead>
+      <tbody>
+        <tr><th>1. 진동자 하나</th><td>ω = √(K/M)</td><td>진동수는 K와 M만으로 정해지고 진폭과 무관</td></tr>
+        <tr><th>2. 이웃과 연결</th><td>M ü<sub>j</sub> = K(u<sub>j+1</sub> + u<sub>j−1</sub> − 2u<sub>j</sub>)</td><td>힘은 이웃과의 차이로 정해짐 → 움직임이 퍼져 파동이 됨</td></tr>
+        <tr><th>3–4. 분산 관계</th><td>ω = 2√(K/M) |sin(ka/2)|</td><td>긴 파장은 음파(v<sub>s</sub>), 영역 경계는 정상파(v<sub>g</sub> = 0), k와 k + 2π/a는 같은 운동</td></tr>
+        <tr><th>5. 주기 경계 조건</th><td>k = 2πn/(Na), 모드 N개</td><td>원자 수만큼 모드가 있음 → 3장에서 이 점들을 셈</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_02_modes.html">2장으로 →</a></b> STEP 2에서 원자 하나를 당겼을 때의 복잡한 움직임은 사실 N개 모드를 겹쳐 놓은 것입니다. 2장에서는 그 움직임을 모드별로 분해하고, 2원자 사슬과 포논으로 넘어갑니다.</p>
+</section>
+
+<footer>
+  <p>단위: 그림의 수치는 K = M = a = 1 기준입니다 (STEP 1 제외). 변위는 눈에 보이도록 과장했습니다.</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ================================================================== STEP 1
+const S1 = { K: 1, M: 1, A: 1, t: 0, trace: [] };
+const k1 = document.getElementById('k1'), m1 = document.getElementById('m1');
+function s1params() { S1.K = +k1.value; S1.M = +m1.value; S1.trace = []; }
+k1.addEventListener('input', s1params); m1.addEventListener('input', s1params);
+
+function drawS1(dt) {
+  S1.t += dt;
+  const w0 = Math.sqrt(S1.K / S1.M), x = S1.A * Math.cos(w0 * S1.t);
+  S1.trace.push([S1.t, x]);
+  while (S1.trace.length && S1.trace[0][0] < S1.t - 12) S1.trace.shift();
+  document.getElementById('r1').innerHTML = `<span>ω =</span> ${w0.toFixed(3)} <span>&nbsp;주기 T = 2π/ω =</span> ${(2 * Math.PI / w0).toFixed(2)}`;
+
+  // 원자와 용수철
+  let { g, w, h } = fit(document.getElementById('c1a'));
+  const y = h * 0.62, wx = 24, x0 = w * 0.55, scale = w * 0.2, px = x0 + x * scale;
+  const r = 10 + 5 * Math.sqrt(S1.M);
+  wall(g, wx, y, 50, -1);
+  spring(g, wx, px - r, y, C.spring, 9, 6 + 2 * S1.K);
+  g.setLineDash([3, 4]); g.strokeStyle = C.line; g.beginPath(); g.moveTo(x0, y - 34); g.lineTo(x0, y + 26); g.stroke(); g.setLineDash([]);
+  text(g, 'x = 0', x0, y + 38, C.muted, 'center');
+  atom(g, px, y, r, C.atom);
+  arrow(g, px, y - r - 14, px - S1.K * x * scale * 0.35, y - r - 14, C.accent, FIG.s1 === 'force' || FIG.s1 === 'newton' ? 4 : 2.5);
+  text(g, 'F = −Kx', px, y - r - 22, C.accent, 'center');
+
+  // 퍼텐셜 우물
+  ({ g, w, h } = fit(document.getElementById('c1b')));
+  const f = frame(g, w, h, [-1.3, 1.3], [0, 1.3], { l: 10, r: 10, t: 10, b: 20 });
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= 120; i++) { const xx = -1.3 + 2.6 * i / 120; const yy = Math.min(0.5 * S1.K * xx * xx, 1.3); i ? g.lineTo(f.X(xx), f.Y(yy)) : g.moveTo(f.X(xx), f.Y(yy)); }
+  g.stroke();
+  const Etot = 0.5 * S1.K * S1.A * S1.A;
+  g.setLineDash([4, 4]); g.strokeStyle = C.muted; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(f.x0, f.Y(Etot)); g.lineTo(f.x1, f.Y(Etot)); g.stroke(); g.setLineDash([]);
+  text(g, '총에너지 ½KA²', f.x1, f.Y(Etot) - 4, C.muted, 'right');
+  if (FIG.s1 === 'quant') {
+    const hw = 0.16 * w0;          // 보기 좋게 정한 ħ
+    for (let n = 0; (n + 0.5) * hw < 1.0; n++) {
+      const En = (n + 0.5) * hw, xw = Math.sqrt(2 * En / S1.K);
+      g.strokeStyle = C.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(f.X(-xw), f.Y(En)); g.lineTo(f.X(xw), f.Y(En)); g.stroke();
+      if (n < 3) text(g, `n=${n}`, f.X(xw) + 4, f.Y(En) + 4, C.accent);
+    }
+    text(g, '주황 선 = 허용된 에너지 (n + ½)ħω', f.x0, f.y0 + 14, C.accent);
+  }
+  atom(g, f.X(x), f.Y(0.5 * S1.K * x * x) - 7, 7, C.atom);
+  text(g, 'x', f.x1, h - 4, C.muted, 'right');
+
+  // x(t)
+  ({ g, w, h } = fit(document.getElementById('c1c')));
+  const f2 = frame(g, w, h, [S1.t - 12, S1.t], [-1.3, 1.3], { l: 10, r: 10, t: 10, b: 20 });
+  g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.moveTo(f2.x0, f2.Y(0)); g.lineTo(f2.x1, f2.Y(0)); g.stroke();
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  S1.trace.forEach(([t, v], i) => i ? g.lineTo(f2.X(t), f2.Y(v)) : g.moveTo(f2.X(t), f2.Y(v)));
+  g.stroke();
+  if (FIG.s1 === 'omega') {
+    const T = 2 * Math.PI / w0, tp = Math.floor(S1.t / T) * T;   // 가장 최근 봉우리 (x = A cos ωt)
+    if (tp - T > S1.t - 12) {
+      const ya = f2.Y(1.18);
+      g.strokeStyle = C.accent; g.lineWidth = 1.5; g.beginPath();
+      g.moveTo(f2.X(tp - T), ya + 5); g.lineTo(f2.X(tp - T), ya); g.lineTo(f2.X(tp), ya); g.lineTo(f2.X(tp), ya + 5); g.stroke();
+      text(g, `T = 2π/ω = ${T.toFixed(2)}`, f2.X(tp - T / 2), ya - 4, C.accent, 'center');
+    }
+  }
+  atom(g, f2.X(S1.t), f2.Y(x), 4, C.accent);
+  text(g, '시간 →', f2.x1, h - 4, C.muted, 'right');
+}
+
+// ================================================================== STEP 2
+const N2 = 14;
+const S2 = { u: new Float64Array(N2), v: new Float64Array(N2), sel: 6, playing: true, t: 0 };
+S2.u[S2.sel] = 0.45;
+function acc2(u, j) {
+  const left = j > 0 ? u[j - 1] : 0, right = j < N2 - 1 ? u[j + 1] : 0;
+  return { right: right - u[j], left: -(u[j] - left), net: right + left - 2 * u[j] };
+}
+function step2(dt) {
+  const h = 0.02, n = Math.ceil(dt / h), u = S2.u, v = S2.v;
+  for (let s = 0; s < n; s++) {
+    for (let j = 0; j < N2; j++) v[j] += 0.5 * h * acc2(u, j).net;
+    for (let j = 0; j < N2; j++) u[j] += h * v[j];
+    for (let j = 0; j < N2; j++) v[j] += 0.5 * h * acc2(u, j).net;
+  }
+}
+document.getElementById('b2pull').addEventListener('click', () => {
+  S2.u.fill(0); S2.v.fill(0); S2.u[S2.sel] = 0.45; S2.playing = true; document.getElementById('b2play').textContent = '일시정지';
+});
+document.getElementById('b2play').addEventListener('click', e => {
+  S2.playing = !S2.playing; e.target.textContent = S2.playing ? '일시정지' : '재생';
+});
+document.getElementById('b2zero').addEventListener('click', () => { S2.u.fill(0); S2.v.fill(0); });
+const c2a = document.getElementById('c2a');
+c2a.addEventListener('pointerdown', e => {
+  const rect = c2a.getBoundingClientRect(), sp = rect.width / (N2 + 1);
+  const j = Math.round((e.clientX - rect.left) / sp) - 1;
+  if (j >= 0 && j < N2) S2.sel = j;
+});
+
+function drawS2(dt) {
+  if (S2.playing) step2(dt);
+  const u = S2.u, j = S2.sel, F = acc2(u, j);
+  document.getElementById('r2').innerHTML =
+    `<span>원자 j =</span> ${j + 1} <span>&nbsp;오른쪽</span> ${F.right >= 0 ? '+' : ''}${F.right.toFixed(2)} <span>&nbsp;왼쪽</span> ${F.left >= 0 ? '+' : ''}${F.left.toFixed(2)} <span>&nbsp;합력</span> ${F.net >= 0 ? '+' : ''}${F.net.toFixed(2)}`;
+
+  let { g, w, h } = fit(c2a);
+  const sp = w / (N2 + 1), y = h * 0.66, X = i => (i + 1) * sp + (i >= 0 && i < N2 ? u[i] : 0) * sp;
+  wall(g, X(-1), y, 44, -1); wall(g, X(N2), y, 44, 1);
+  for (let i = -1; i < N2; i++) {
+    const a = X(i), b = X(i + 1), hot = i === j - 1 || i === j;
+    const gap = Math.min(7, sp * 0.28);
+    spring(g, a + (i >= 0 ? gap : 0), b - (i + 1 < N2 ? gap : 0), y, hot ? C.fg : C.spring, 4, 4, hot ? 1.8 : 1.2);
+  }
+  const r2 = Math.min(7, sp * 0.28);
+  for (let i = 0; i < N2; i++) atom(g, X(i), y, r2, C.atom, i === j ? C.accent : null);
+  // 두 용수철의 힘과 합력
+  const fs = sp * 1.6, ax = X(j), fig = FIG.s2;
+  const showR = fig !== 'left' && fig !== 'u', showL = fig !== 'right' && fig !== 'u', showN = !['right', 'left', 'u'].includes(fig);
+  if (fig === 'u') {
+    for (let i = 0; i < N2; i++) { g.strokeStyle = C.muted; g.lineWidth = 1; g.beginPath(); g.moveTo((i + 1) * sp, y + 12); g.lineTo((i + 1) * sp, y + 20); g.stroke(); }
+    arrow(g, (j + 1) * sp, y + 24, ax, y + 24, C.accent, 2);
+    text(g, 'u_j', ((j + 1) * sp + ax) / 2, y + 40, C.accent, 'center');
+  }
+  if (showR) arrow(g, ax, y - 26, ax + F.right * fs, y - 26, C.wave, fig === 'right' ? 3.5 : 2);
+  if (showL) arrow(g, ax, y - 40, ax + F.left * fs, y - 40, C.wave2, fig === 'left' ? 3.5 : 2);
+  if (showN) arrow(g, ax, y + 24, ax + F.net * fs, y + 24, C.accent, fig === 'net' ? 3.5 : 2.5);
+  text(g, '━ 오른쪽 용수철이 당기는 힘  K(u[j+1] − u[j])', 8, 14, C.wave);
+  text(g, '━ 왼쪽 용수철이 당기는 힘  −K(u[j] − u[j−1])', 8, 30, C.wave2);
+  if (showN) text(g, '합력 F_j', ax, y + 42, C.accent, 'center');
+
+  ({ g, w, h } = fit(document.getElementById('c2b')));
+  const f = frame(g, w, h, [0, N2 + 1], [-0.5, 0.5], { l: 10, r: 10, t: 8, b: 18 });
+  g.strokeStyle = C.line; g.beginPath(); g.moveTo(f.x0, f.Y(0)); g.lineTo(f.x1, f.Y(0)); g.stroke();
+  for (let i = 0; i < N2; i++) {
+    g.strokeStyle = i === j ? C.accent : C.wave; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(f.X(i + 1), f.Y(0)); g.lineTo(f.X(i + 1), f.Y(u[i])); g.stroke();
+    atom(g, f.X(i + 1), f.Y(u[i]), 3.5, i === j ? C.accent : C.wave);
+  }
+  text(g, 'j', f.x1, h - 3, C.muted, 'right');
+}
+
+// ================================================================== STEP 3
+const S3 = { ka: 0.8, t: 0 };
+const k3 = document.getElementById('k3');
+k3.addEventListener('input', () => { S3.ka = +k3.value; });
+const disp = ka => 2 * Math.abs(Math.sin(ka / 2));
+const nFor = canvas => Math.max(10, Math.min(24, Math.floor(canvas.clientWidth / 24)));
+
+function drawChainWave(canvas, k, t, nAtoms, hl, A = 0.3) {
+  const { g, w, h } = fit(canvas);
+  const sp = w / (nAtoms + 1), y = h * 0.5, om = disp(k), r = Math.min(6.5, sp * 0.26);
+  const u = i => A * Math.cos(k * i - om * t);
+  for (let i = 0; i < nAtoms - 1; i++) spring(g, (i + 1) * sp + u(i) * sp + r, (i + 2) * sp + u(i + 1) * sp - r, y, C.spring, 3, 3.5, 1.1);
+  for (let i = 0; i < nAtoms; i++) atom(g, (i + 1) * sp + u(i) * sp, y, r, hl.includes(i) ? C.accent : C.atom);
+  hl.forEach((i, n) => text(g, ['j−1', 'j', 'j+1'][n], (i + 1) * sp, y + (n === 1 ? 36 : 22), C.accent, 'center'));
+  return { u, om };
+}
+
+function drawWavePlot(canvas, k, t, nAtoms, hl, folded, A = 0.3) {
+  const { g, w, h } = fit(canvas);
+  const om = disp(k);
+  const f = frame(g, w, h, [0, nAtoms + 1], [-0.42, 0.42], { l: 10, r: 10, t: 8, b: 18 });
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(f.x0, f.Y(0)); g.lineTo(f.x1, f.Y(0)); g.stroke();
+  const curve = (kk, color, dash) => {
+    g.setLineDash(dash || []); g.strokeStyle = color; g.lineWidth = 1.6; g.beginPath();
+    for (let i = 0; i <= 600; i++) {
+      const xx = (nAtoms + 1) * i / 600, yy = A * Math.cos(kk * (xx - 1) - om * t);
+      i ? g.lineTo(f.X(xx), f.Y(yy)) : g.moveTo(f.X(xx), f.Y(yy));
+    }
+    g.stroke(); g.setLineDash([]);
+  };
+  curve(k, C.wave);
+  if (folded !== undefined) curve(folded, C.wave2, [5, 4]);
+  for (let i = 0; i < nAtoms; i++) atom(g, f.X(i + 1), f.Y(A * Math.cos(k * i - om * t)), 4, hl.includes(i) ? C.accent : C.atom);
+  text(g, 'x = ja', f.x1, h - 3, C.muted, 'right');
+}
+
+function drawS3(dt) {
+  S3.t += dt;
+  const N = nFor(document.getElementById('c3a')), mid = Math.floor(N / 2), hl = [mid - 1, mid, mid + 1], k = S3.ka, om = disp(k);
+  drawChainWave(document.getElementById('c3a'), k, S3.t, N, hl);
+  drawWavePlot(document.getElementById('c3b'), k, S3.t, N, hl);
+  document.getElementById('r3').innerHTML = `<span>ka =</span> ${k.toFixed(2)} <span>&nbsp;파장 λ = 2π/k =</span> ${(2 * Math.PI / k).toFixed(1)}a <span>&nbsp;ω =</span> ${om.toFixed(3)}`;
+
+  // 위상자
+  const { g, w, h } = fit(document.getElementById('c3c'));
+  const R = Math.min(h * 0.32, w / 9), cy = h * 0.46;
+  const names = ['j−1', 'j', 'j+1'];
+  for (let n = 0; n < 3; n++) {
+    const cx = w * (0.2 + 0.3 * n), th = k * (hl[n]) - om * S3.t;
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R, 0, 2 * Math.PI); g.stroke();
+    g.beginPath(); g.moveTo(cx - R - 4, cy); g.lineTo(cx + R + 4, cy); g.stroke();
+    // 실수부 = 실제 변위 (가로축 투영)
+    const ex = cx + R * Math.cos(th), ey = cy - R * Math.sin(th);
+    g.setLineDash([2, 3]); g.strokeStyle = C.muted; g.beginPath(); g.moveTo(ex, ey); g.lineTo(ex, cy); g.stroke(); g.setLineDash([]);
+    arrow(g, cx, cy, ex, ey, C.accent, 2.2);
+    atom(g, ex, cy, 3.5, C.wave);
+    text(g, names[n], cx, cy + R + 18, C.fg, 'center');
+    if (n < 2 && FIG.s3 === 'neighbor') {
+      g.strokeStyle = C.accent; g.lineWidth = 2; g.beginPath();
+      g.arc(cx, cy, R * 0.45, -th - k, -th, false); g.stroke();   // 다음 원자까지 ka 만큼
+    }
+    if (n < 2) {
+      // 다음 원자와의 위상차 ka
+      const cx2 = w * (0.2 + 0.3 * (n + 1));
+      text(g, `+ka = ${k.toFixed(2)}`, (cx + cx2) / 2, cy - R - 6, C.muted, 'center');
+    }
+  }
+  text(g, '가로축 투영(파란 점) = 실수부 = 실제 변위', w / 2, h - 4, C.muted, 'center');
+}
+
+// ================================================================== STEP 4
+const S4 = { k: 1.2, t: 0 };
+const c4a = document.getElementById('c4a');
+const K4R = [-2 * Math.PI - 0.3, 2 * Math.PI + 0.3];
+let f4 = null;
+function pick4(e) {
+  if (!f4) return;
+  const rect = c4a.getBoundingClientRect(), px = e.clientX - rect.left;
+  const k = K4R[0] + (px - f4.x0) / (f4.x1 - f4.x0) * (K4R[1] - K4R[0]);
+  S4.k = Math.max(-2 * Math.PI, Math.min(2 * Math.PI, k));
+  if (Math.abs(S4.k) < 0.02) S4.k = 0.02;
+}
+c4a.addEventListener('pointerdown', e => { c4a.setPointerCapture(e.pointerId); pick4(e); });
+c4a.addEventListener('pointermove', e => { if (e.buttons) pick4(e); });
+
+function drawS4(dt) {
+  S4.t += dt;
+  const k = S4.k, om = disp(k), vg = Math.cos(k / 2) * Math.sign(Math.sin(k / 2)), vp = om / Math.abs(k);
+  const G = 2 * Math.PI, kf = k - G * Math.round(k / G), outside = Math.abs(k) > Math.PI + 1e-9;
+
+  let { g, w, h } = fit(c4a);
+  const f = frame(g, w, h, K4R, [0, 2.35], { l: 44, r: 10, t: 12, b: 26 });
+  f4 = f;
+  g.fillStyle = C.bz; g.fillRect(f.X(-Math.PI), f.y1, f.X(Math.PI) - f.X(-Math.PI), f.y0 - f.y1);
+  g.strokeStyle = C.grid; g.lineWidth = 1;
+  for (const kk of [-2 * Math.PI, -Math.PI, 0, Math.PI, 2 * Math.PI]) { g.beginPath(); g.moveTo(f.X(kk), f.y1); g.lineTo(f.X(kk), f.y0); g.stroke(); }
+  for (const yy of [1, 2]) { g.beginPath(); g.moveTo(f.x0, f.Y(yy)); g.lineTo(f.x1, f.Y(yy)); g.stroke(); }
+  [['−2π/a', -2 * Math.PI], ['−π/a', -Math.PI], ['0', 0], ['π/a', Math.PI], ['2π/a', 2 * Math.PI]].forEach(([s, kk]) => text(g, s, f.X(kk), h - 8, C.muted, 'center'));
+  text(g, 'ω_max', f.x0 - 4, f.Y(2) + 4, C.muted, 'right');
+  text(g, '1', f.x0 - 4, f.Y(1) + 4, C.muted, 'right');
+  text(g, 'ω', f.x0 + 4, f.y1 + 10, C.muted);
+  // Debye 근사
+  g.setLineDash([4, 4]); g.strokeStyle = C.muted; g.lineWidth = 1; g.beginPath();
+  g.moveTo(f.X(-2.35), f.Y(2.35)); g.lineTo(f.X(0), f.Y(0)); g.lineTo(f.X(2.35), f.Y(2.35)); g.stroke(); g.setLineDash([]);
+  text(g, 'ω = v_s k', f.X(2.1) + 6, f.Y(2.1), C.muted);
+  // 분산 곡선
+  g.strokeStyle = C.wave; g.lineWidth = 2.2; g.beginPath();
+  for (let i = 0; i <= 500; i++) { const kk = K4R[0] + (K4R[1] - K4R[0]) * i / 500; i ? g.lineTo(f.X(kk), f.Y(disp(kk))) : g.moveTo(f.X(kk), f.Y(disp(kk))); }
+  g.stroke();
+  // 접선
+  const dk = 0.9;
+  g.strokeStyle = C.accent; g.lineWidth = 1.5; g.beginPath();
+  g.moveTo(f.X(k - dk), f.Y(om - vg * dk)); g.lineTo(f.X(k + dk), f.Y(om + vg * dk)); g.stroke();
+  if (outside) atom(g, f.X(kf), f.Y(disp(kf)), 5, C.wave2);
+  atom(g, f.X(k), f.Y(om), 6, C.accent);
+  text(g, '1st BZ', f.X(-Math.PI) + 4, f.y0 - 6, C.wave);
+
+  const n4 = nFor(document.getElementById('c4b'));
+  drawChainWave(document.getElementById('c4b'), k, S4.t, n4, []);
+  drawWavePlot(document.getElementById('c4c'), k, S4.t, n4, [], outside ? kf : undefined);
+
+  document.getElementById('r4').innerHTML =
+    `<span>ka =</span> ${k.toFixed(2)} <span>&nbsp;ω =</span> ${om.toFixed(3)} <span>&nbsp;v_p = ω/k =</span> ${vp.toFixed(3)} <span>&nbsp;v_g = dω/dk =</span> ${vg.toFixed(3)}` +
+    (outside ? `<br><span>영역 밖입니다. k − G = </span>${kf.toFixed(2)}<span> 로 접으면 같은 원자 운동</span>` : '');
+}
+
+// ================================================================== STEP 5
+const S5 = { N: 8, n: 1, t: 0 };
+const n5 = document.getElementById('n5');
+n5.addEventListener('input', () => { S5.N = +n5.value; S5.n = Math.max(-Math.floor((S5.N - 1) / 2), Math.min(Math.floor(S5.N / 2), S5.n)); });
+const nRange = N => { const out = []; for (let n = -Math.ceil(N / 2) + 1; n <= Math.floor(N / 2); n++) out.push(n); return out; };
+const c5b = document.getElementById('c5b');
+let f5 = null;
+c5b.addEventListener('pointerdown', e => {
+  if (!f5) return;
+  const rect = c5b.getBoundingClientRect(), px = e.clientX - rect.left, py = e.clientY - rect.top;
+  let best = null, bd = 1e9;
+  for (const n of nRange(S5.N)) {
+    const kk = 2 * Math.PI * n / S5.N, d = Math.hypot(f5.X(kk) - px, f5.Y(disp(kk)) - py);
+    if (d < bd) { bd = d; best = n; }
+  }
+  if (best !== null && bd < 40) S5.n = best;
+});
+
+function drawS5(dt) {
+  S5.t += dt;
+  const N = S5.N, n = S5.n, k = 2 * Math.PI * n / N, om = disp(k), A = 0.3;
+  document.getElementById('r5').innerHTML =
+    `<span>원자</span> ${N}<span>개 → 허용 k</span> ${N}<span>개 &nbsp;선택: n =</span> ${n} <span>&nbsp;ka = 2πn/N =</span> ${k.toFixed(3)} <span>&nbsp;ω =</span> ${om.toFixed(3)}`;
+
+  // 고리
+  let { g, w, h } = fit(document.getElementById('c5a'));
+  const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.36;
+  g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R, 0, 2 * Math.PI); g.stroke();
+  const ang = j => -Math.PI / 2 + 2 * Math.PI / N * (j + A * Math.cos(k * j - om * S5.t));
+  const pos = j => [cx + R * Math.cos(ang(j)), cy + R * Math.sin(ang(j))];
+  for (let j = 0; j < N; j++) {
+    const [x1, y1] = pos(j), [x2, y2] = pos((j + 1) % N);
+    g.strokeStyle = C.spring; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+  }
+  for (let j = 0; j < N; j++) {
+    const [x, y] = pos(j);
+    atom(g, x, y, Math.max(4, 9 - N / 5), j === 0 ? C.accent : C.atom);
+  }
+  const [x0, y0] = pos(0);
+  text(g, 'j = 1 = N+1', x0, y0 - 16, C.accent, 'center');
+
+  // 허용된 k
+  ({ g, w, h } = fit(c5b));
+  const f = frame(g, w, h, [-Math.PI - 0.2, Math.PI + 0.2], [0, 2.3], { l: 26, r: 10, t: 10, b: 26 });
+  f5 = f;
+  g.fillStyle = C.bz; g.fillRect(f.X(-Math.PI), f.y1, f.X(Math.PI) - f.X(-Math.PI), f.y0 - f.y1);
+  g.strokeStyle = C.line; g.lineWidth = 1.2; g.beginPath();
+  for (let i = 0; i <= 300; i++) { const kk = -Math.PI + 2 * Math.PI * i / 300; i ? g.lineTo(f.X(kk), f.Y(disp(kk))) : g.moveTo(f.X(kk), f.Y(disp(kk))); }
+  g.stroke();
+  for (const m of nRange(N)) {
+    const kk = 2 * Math.PI * m / N;
+    g.strokeStyle = C.grid; g.beginPath(); g.moveTo(f.X(kk), f.y0); g.lineTo(f.X(kk), f.Y(disp(kk))); g.stroke();
+    atom(g, f.X(kk), f.Y(disp(kk)), m === n ? 6 : 4, m === n ? C.accent : C.wave);
+  }
+  [['−π/a', -Math.PI], ['0', 0], ['π/a', Math.PI]].forEach(([s, kk]) => text(g, s, f.X(kk), h - 8, C.muted, 'center'));
+  text(g, `Δk = 2π/(Na) = ${(2 * Math.PI / N).toFixed(2)}`, f.x0 + 4, f.y1 + 10, C.muted);
+}
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs({
+  s4: a => { const k = +a.split(':')[1]; S4.k = k; },
+});
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4, s5: drawS5 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+// 첫 화면: 모든 그림을 한 번 그려 둔다
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

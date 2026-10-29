@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>포논 열전도와 BTE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 5–6 Boltzmann transport equation</div>
+  <h1>4장. 포논이 열을 나르는 방법: BTE에서 κ = Σ C v² τ 까지</h1>
+  <p>3장까지는 온도가 어디서나 같은 평형 상태였고, 그때는 열이 흐르지 않습니다. 이번 장에서는 온도 기울기가 생겼을 때 포논 분포가 평형에서 얼마나 벗어나는지(δf), 그 작은 차이가 어떻게 열 흐름 q = −κ∇T가 되는지 따라갑니다.</p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <p class="legend-terms">색 약속: <span class="tC">C 열용량</span><span class="tV">v 군속도</span><span class="tTau">τ 수명</span><span class="tGrad">∇T 온도 기울기</span></p>
+  <nav class="toc" aria-label="단계">
+    <a href="phonon_03_dos_heat.html">← 3장</a>
+    <a href="#s1"><b>1</b>평형에서는 왜 열이 안 흐르나</a>
+    <a href="#s2"><b>2</b>BTE: 표류와 산란</a>
+    <a href="#s3"><b>3</b>푸리에 법칙과 κ</a>
+    <a href="#s4"><b>4</b>모드별 κ</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1 · Lecture 5</div>
+    <h2>평형에서는 왜 열이 흐르지 않을까</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>포논을 군속도 v로 날아다니는 입자(파동 묶음)로 봅니다. 오른쪽 막대 속 점 하나가 포논 하나이고, 가운데 점선을 지나갈 때마다 에너지를 옮깁니다.</p>
+      <p class="try">해 보기: 오른쪽으로 건너간 에너지(→)와 왼쪽으로 건너간 에너지(←)를 몇 초 지켜보세요. 포논은 계속 움직이는데 알짜 흐름은 어떻게 되나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-fig="particles" data-hl="c1a">
+          <div class="d-math">\(f(\mathbf r, \mathbf k, t)\): 위치 r에서 파수 k인 상태의 점유도</div>
+          <div class="d-why">포논 하나하나를 추적하는 대신, "r 근처에 k 상태 포논이 평균 몇 개 있나"만 다룹니다. 평형에서는 3장의 f<sub>BE</sub>입니다.</div>
+          <div class="d-look">점들이 각자 다른 방향으로 날아다닙니다. 이 무리를 분포 f로 요약합니다.</div>
+        </div>
+        <div class="d-step" data-fig="pm" data-hl="c1a">
+          <div class="d-math">\(f_0 = \dfrac{1}{e^{\hbar\omega/k_BT} - 1},\qquad \omega(\mathbf k) = \omega(-\mathbf k)\)</div>
+          <div class="d-why">평형 분포는 진동수(에너지)에만 의존합니다. +k와 −k는 진동수가 같으니 점유도도 같습니다.</div>
+          <div class="d-look">오른쪽으로 가는 포논(파랑)과 왼쪽으로 가는 포논(보라)의 수가 같습니다.</div>
+        </div>
+        <div class="d-step" data-fig="flux" data-hl="c1a c1b">
+          <div class="d-math">\(\mathbf q = \dfrac{1}{V}\displaystyle\sum_{\mathbf k} \hbar\omega_{\mathbf k}\,\htmlClass{tV}{\mathbf v_{\mathbf k}}\,f_{\mathbf k}\)</div>
+          <div class="d-why">열유속 = (에너지) × (속도) × (개수)를 모든 상태에 대해 더한 것 (Lecture 5 "flux = quantity × velocity").</div>
+          <div class="d-look">가운데 점선을 지나가는 에너지를 →, ← 따로 셉니다.</div>
+        </div>
+        <div class="d-step" data-fig="cancel" data-hl="c1b">
+          <div class="d-math">\(\htmlClass{tV}{\mathbf v_{-\mathbf k}} = -\htmlClass{tV}{\mathbf v_{\mathbf k}},\; f_0(-\mathbf k) = f_0(\mathbf k) \;\Rightarrow\; \mathbf q = 0\)</div>
+          <div class="d-why">+k 항과 −k 항이 짝지어 상쇄됩니다. 포논이 아무리 빨리 움직여도 평형에서는 알짜 열 흐름이 0입니다.</div>
+          <div class="d-look">알짜 흐름 막대가 0 근처에서만 흔들립니다.</div>
+        </div>
+        <div class="d-step" data-fig="need" data-hl="c1b">
+          <div class="d-math">\(f = f_0 + \delta f,\qquad \mathbf q = \dfrac{1}{V}\displaystyle\sum_{\mathbf k} \hbar\omega\,\htmlClass{tV}{\mathbf v}\,\delta f\)</div>
+          <div class="d-why">열이 흐르려면 +k와 −k의 점유가 조금 달라야 합니다. f<sub>0</sub> 부분은 위에서 0이 되었으니, 열을 나르는 것은 오직 평형에서 벗어난 부분 δf입니다. δf를 구하는 식이 Boltzmann 수송 방정식(BTE)입니다.</div>
+          <div class="d-look">다음 단계에서 막대 양 끝에 온도 차이를 걸어 δf를 만들어 봅니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>열전도는 포논이 "있어서"가 아니라 오른쪽으로 가는 포논과 왼쪽으로 가는 포논이 "불균형해서" 생깁니다. 비열(3장)은 f<sub>0</sub>만으로 정해지지만, 열전도도는 δf가 필요한 비평형 성질입니다.</p>
+        <details><summary>확인 질문: 평형인 결정에서 포논의 평균 속력은 0일까요?</summary><p>아닙니다. 각 포논은 |v<sub>g</sub>|로 움직입니다. 0이 되는 것은 방향까지 더한 평균 속도이고, 그래서 알짜 열 흐름이 0입니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">평형 상태의 포논 기체. 점 = 포논 (파랑 → 방향, 보라 ← 방향), 점선 = 에너지를 세는 단면</p><canvas id="c1a" style="height:150px"></canvas></div>
+    <div class="card"><p class="cap">단면을 지나간 에너지 (최근 몇 초 동안)</p><canvas id="c1b" style="height:130px"></canvas></div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2 · Lecture 5–6</div>
+    <h2>BTE: 표류와 산란의 경쟁</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>이제 막대 왼쪽 끝은 뜨겁고 오른쪽 끝은 차갑습니다. 포논은 직선으로 날아가다가(표류) 평균 τ마다 한 번씩 산란되어, 그 자리 온도에 맞는 에너지와 무작위 방향을 새로 받습니다.</p>
+      <p class="try">해 보기: 아래 그래프에서 오른쪽으로 가는 포논(파랑)과 왼쪽으로 가는 포논(보라)의 평균 에너지를 비교하세요. 그다음 τ를 줄였다 늘려 보세요. 두 선 사이 간격이 어떻게 변하나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-fig="all" data-hl="c2a">
+          <div class="d-math">\(\dfrac{\partial f}{\partial t} + \htmlClass{tV}{\mathbf v}\cdot\nabla_{\mathbf r} f + \dfrac{\mathbf F}{\hbar}\cdot\nabla_{\mathbf k} f = \left(\dfrac{\partial f}{\partial t}\right)_{\text{coll}}\)</div>
+          <div class="d-why">Boltzmann 수송 방정식. 왼쪽: 분포가 시간에 따라(1항), 공간 이동으로(2항), 외력으로 k가 바뀌어서(3항) 변하는 정도. 오른쪽: 산란이 분포를 바꾸는 정도.</div>
+          <div class="d-look">점들이 날아가고(왼쪽 항) 가끔 반짝이며 산란됩니다(오른쪽 항).</div>
+        </div>
+        <div class="d-step" data-fig="drift" data-hl="c2a">
+          <div class="d-math">\(\htmlClass{tV}{\mathbf v}\cdot\nabla_{\mathbf r} f\): 표류 (drift)</div>
+          <div class="d-why">포논은 군속도로 이동하며 출발한 곳의 정보를 실어 나릅니다. 뜨거운 쪽에서 출발한 포논은 에너지가 큰 채로 차가운 쪽에 도착합니다. 포논에는 전기장 같은 외력이 없으므로 F = 0입니다.</div>
+          <div class="d-look">몇몇 포논의 지나온 궤적을 선으로 남깁니다. 색은 지금 가진 에너지(빨강 = 뜨거움)입니다.</div>
+        </div>
+        <div class="d-step" data-fig="coll" data-hl="c2a">
+          <div class="d-math">\(\left(\dfrac{\partial f}{\partial t}\right)_{\text{coll}} \approx -\dfrac{f - f_0}{\htmlClass{tTau}{\tau}}\)</div>
+          <div class="d-why">완화 시간 근사(RTA). 평형에서 벗어난 만큼(f − f<sub>0</sub>)이 시간 상수 τ로 지수적으로 사라진다고 봅니다. 산란은 포논을 그 자리 온도의 평형 분포로 되돌려 놓습니다.</div>
+          <div class="d-look">반짝이는 원이 산란 순간입니다. 산란 직후 포논의 색은 그 자리 배경 온도와 같아집니다.</div>
+        </div>
+        <div class="d-step" data-fig="lin" data-hl="c2a">
+          <div class="d-math">\(\text{정상 상태, } \delta f \ll f_0:\quad \htmlClass{tV}{v_x}\,\dfrac{\partial f_0}{\partial x} = -\dfrac{\delta f}{\htmlClass{tTau}{\tau}}\)</div>
+          <div class="d-why">시간에 따라 변하지 않고(∂f/∂t = 0), 벗어남이 작다고 보면 왼쪽의 f를 f<sub>0</sub>로 바꿔도 됩니다 (선형화). 여기서 f<sub>0</sub>는 그 자리 온도 T(x)의 평형 분포입니다.</div>
+          <div class="d-look">배경 색이 T(x)입니다. 이 국소 평형이 f<sub>0</sub>입니다.</div>
+        </div>
+        <div class="d-step" data-fig="df" data-hl="c2b">
+          <div class="d-math">\(\delta f = -\htmlClass{tTau}{\tau}\,\htmlClass{tV}{v_x}\,\dfrac{\partial f_0}{\partial T}\,\htmlClass{tGrad}{\dfrac{dT}{dx}}\)</div>
+          <div class="d-why">∂f<sub>0</sub>/∂x = (∂f<sub>0</sub>/∂T)(dT/dx). 부호를 보면 v<sub>x</sub> > 0(오른쪽으로 가는)이고 dT/dx < 0(오른쪽이 차가움)이면 δf > 0: 오른쪽으로 가는 포논이 평형보다 많습니다.</div>
+          <div class="d-look">아래 그래프의 파랑(→)과 보라(←) 선 사이 간격이 δf입니다. 파랑이 늘 위에 있습니다.</div>
+        </div>
+        <div class="d-step" data-fig="meaning" data-hl="c2b">
+          <div class="d-math">\(\htmlClass{tTau}{\tau}\): 불균형이 얼마나 오래 사는가 &nbsp;·&nbsp; \(\htmlClass{tV}{v}\,\htmlClass{tGrad}{\nabla T}\): 기울기를 얼마나 세게 느끼는가 &nbsp;·&nbsp; \(\partial f_0/\partial T\): 점유가 온도에 얼마나 민감한가</div>
+          <div class="d-why">오른쪽으로 가는 포논은 평균 거리 ℓ = vτ 만큼 왼쪽(더 뜨거운 곳)에서 마지막으로 평형을 맞췄습니다. 그래서 T(x − vτ)의 정보를 갖고 있습니다. δf는 그 거리만큼의 온도 차이입니다.</div>
+          <div class="d-look">τ 슬라이더를 2배로 하면 두 선 사이 간격도 약 2배가 됩니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>온도 기울기가 직접 열을 흐르게 하는 것이 아닙니다. 기울기는 먼저 δf(방향별 불균형)를 만들고, 그 불균형의 크기는 "산란 없이 날아온 거리 vτ" 동안의 온도 차이로 정해집니다. 산란이 잦으면(τ 작음) 불균형이 금방 지워집니다.</p>
+        <details><summary>확인 질문: 산란이 전혀 없으면(τ → ∞) δf는 무한대가 될까요?</summary><p>식으로는 그렇지만 실제로는 막대 길이 L이 상한입니다. vτ가 L보다 길면 포논은 양 끝 열원에서 바로 날아오므로 "탄도(ballistic)" 수송이 됩니다 (Lecture 9). 오른쪽에서 τ를 최대로 올려 보세요.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">뜨거운 왼쪽 끝 → 차가운 오른쪽 끝. 배경 = 국소 온도 T(x), 점 = 포논 (색 = 가진 에너지)</p><canvas id="c2a" style="height:170px"></canvas></div>
+    <div class="card"><p class="cap">위치별 평균 에너지: 파랑 = 오른쪽으로 가는 포논, 보라 = 왼쪽으로 가는 포논, 회색 = T(x)</p><canvas id="c2b" style="height:170px"></canvas></div>
+    <div class="card controls">
+      <label><span class="tTau">τ</span> <input type="range" id="tau2" min="-1.3" max="1" step="0.01" value="-0.4"></label>
+      <div class="readout" id="r2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3 · Lecture 5–6</div>
+    <h2>푸리에 법칙과 열전도도 κ</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>STEP 2의 막대에서 실제로 흐른 열을 잽니다. 온도 차이를 두 배로 하면 열 흐름도 두 배가 되는지, τ를 바꾸면 비례 계수 κ가 어떻게 되는지 봅니다.</p>
+      <p class="try">해 보기: ΔT를 바꿔서 측정점이 직선 위에 있는지 보세요. 그다음 τ를 여러 값으로 바꾸고 몇 초씩 기다리면 오른쪽 아래 그래프에 측정점이 쌓입니다. 어디서 직선(예측)과 어긋나기 시작하나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-fig="q" data-hl="c3a">
+          <div class="d-math">\(q_x = \dfrac{1}{V}\displaystyle\sum_{\mathbf k} \hbar\omega\,\htmlClass{tV}{v_x}\,\delta f\)</div>
+          <div class="d-why">STEP 1에서 본 대로 열을 나르는 것은 δf뿐입니다.</div>
+          <div class="d-look">왼쪽 위 숫자: 막대를 지나는 열 흐름 q (측정).</div>
+        </div>
+        <div class="d-step" data-fig="insert" data-hl="c3a">
+          <div class="d-math">\(q_x = -\left[\dfrac{1}{V}\displaystyle\sum_{\mathbf k} \hbar\omega\,\dfrac{\partial f_0}{\partial T}\,\htmlClass{tV}{v_x^2}\,\htmlClass{tTau}{\tau}\right]\htmlClass{tGrad}{\dfrac{dT}{dx}}\)</div>
+          <div class="d-why">STEP 2의 δf를 대입. v<sub>x</sub>가 두 번 들어가서 v<sub>x</sub>²이 됩니다. 방향이 반대인 포논도 부호가 같아져 모두 같은 쪽으로 열을 나릅니다.</div>
+          <div class="d-look">q가 ΔT에 비례하는지 왼쪽 위 그래프에서 확인하세요.</div>
+        </div>
+        <div class="d-step" data-fig="fourier" data-hl="c3b">
+          <div class="d-math">\(q = -\kappa\,\htmlClass{tGrad}{\nabla T}\) 와 비교 \(\Rightarrow\; \kappa = \dfrac{1}{V}\displaystyle\sum_{\mathbf k} \htmlClass{tC}{C_{\mathbf k}}\,\htmlClass{tV}{v_x^2}\,\htmlClass{tTau}{\tau_{\mathbf k}},\quad \htmlClass{tC}{C_{\mathbf k}} = \hbar\omega\dfrac{\partial f_0}{\partial T}\)</div>
+          <div class="d-why">대괄호 속이 바로 푸리에 법칙의 κ입니다. C<sub>k</sub>는 3장의 모드 비열 c(x)와 같은 양입니다.</div>
+          <div class="d-look">오른쪽 위 막대: 측정한 κ와 C v² τ 예측.</div>
+        </div>
+        <div class="d-step" data-fig="iso" data-hl="c3b">
+          <div class="d-math">\(\text{3D 등방: } \langle v_x^2\rangle = \tfrac13 v^2 \;\Rightarrow\; \kappa = \dfrac{1}{3V}\displaystyle\sum \htmlClass{tC}{C}\,\htmlClass{tV}{v^2}\,\htmlClass{tTau}{\tau} = \dfrac{1}{3V}\displaystyle\sum \htmlClass{tC}{C}\,\htmlClass{tV}{v}\,\ell,\quad \ell = \htmlClass{tV}{v}\htmlClass{tTau}{\tau}\)</div>
+          <div class="d-why">3차원에서는 방향이 고르게 퍼져 있어 x 성분이 평균 1/3만 기여합니다. 이 그림의 막대는 1차원(방향이 ±x 둘뿐)이라 1/3이 없습니다: κ = n v² τ.</div>
+          <div class="d-look">ℓ = vτ 가 표시줄에 나옵니다.</div>
+        </div>
+        <div class="d-step" data-fig="ballistic" data-hl="c3c">
+          <div class="d-math">\(\ell \ll L\): 확산(diffusive), 푸리에 법칙 성립 &nbsp;/&nbsp; \(\ell \gtrsim L\): 탄도(ballistic)</div>
+          <div class="d-why">유도에서 "포논이 산란을 여러 번 겪으며 국소 평형을 유지한다"고 가정했습니다. ℓ이 막대 길이만큼 길어지면 그 가정이 깨지고, κ는 τ에 비례해 계속 커지지 못하고 막대 크기로 제한됩니다.</div>
+          <div class="d-look">오른쪽 아래 그래프에서 τ가 클 때 측정점이 예측 직선 아래로 처집니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>κ = (열을 얼마나 담나 <span class="tC">C</span>) × (얼마나 빨리 가나 <span class="tV">v²</span>) × (방향을 얼마나 오래 유지하나 <span class="tTau">τ</span>). 열을 잘 전하려면 세 가지가 모두 커야 합니다 (Lecture 5). 푸리에 법칙은 BTE의 특수해이고, 평균자유행로가 시료보다 짧을 때만 성립합니다.</p>
+        <details><summary>확인 질문: 이 막대에서 τ를 2배로 하면 κ는?</summary><p>확산 영역(ℓ ≪ L)이면 2배입니다. ℓ이 L에 가까우면 2배보다 덜 늘어납니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="row2">
+      <div class="card"><p class="cap">열 흐름 q vs 온도 차 ΔT (점 = 측정, 선 = κΔT/L 예측)</p><canvas id="c3a" style="height:190px"></canvas></div>
+      <div class="card"><p class="cap">κ: 측정 vs <span class="tC">C</span><span class="tV">v²</span><span class="tTau">τ</span> 예측</p><canvas id="c3b" style="height:190px"></canvas></div>
+    </div>
+    <div class="card"><p class="cap">κ vs <span class="tTau">τ</span> (로그). 선 = 예측 n v² τ, 점 = 측정 (τ를 바꿀 때마다 쌓임), 세로선 = ℓ = L</p><canvas id="c3c" style="height:200px"></canvas></div>
+    <div class="card controls">
+      <label>ΔT <input type="range" id="dT3" min="0.2" max="1.6" step="0.1" value="1"></label>
+      <label><span class="tTau">τ</span> <input type="range" id="tau3" min="-1.3" max="1" step="0.01" value="-0.4"></label>
+      <button id="b3clear">측정점 지우기</button>
+      <div class="readout" id="r3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4 · Lecture 5–6, 9</div>
+    <h2>모드별로 쌓은 κ: 누가 열을 나르나</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>실제 결정에서는 모드마다 C, v, τ가 다릅니다. 1장의 원자 사슬 분산을 써서 세 값을 진동수별로 그리고, 셋을 곱한 것이 κ의 스펙트럼입니다.</p>
+      <p class="try">해 보기: τ 모형을 바꿔 보세요. 고주파 포논의 τ가 짧아지면 열을 나르는 주역이 어느 쪽으로 옮겨가나요? 온도를 낮추면 어떤 모드가 빠지나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-fig="sum" data-hl="c4a">
+          <div class="d-math">\(\kappa = \dfrac13\displaystyle\sum_s\int \htmlClass{tC}{C(\omega)}\,\htmlClass{tV}{v^2(\omega)}\,\htmlClass{tTau}{\tau(\omega)}\,d\omega\)</div>
+          <div class="d-why">모드 합을 진동수 적분으로 바꿈 (Lecture 6). s는 가지(LA, TA, …)입니다.</div>
+          <div class="d-look">맨 아래 그래프의 칠한 넓이가 κ입니다.</div>
+        </div>
+        <div class="d-step" data-fig="C" data-hl="c4a">
+          <div class="d-math">\(\htmlClass{tC}{C(\omega)} = \hbar\omega\,\dfrac{\partial f_{BE}}{\partial T}\,D(\omega)\)</div>
+          <div class="d-why">3장의 모드 비열 × 상태 밀도. 저온에서는 고주파 모드가 얼어서 0이 됩니다.</div>
+          <div class="d-look">주황 곡선. T를 내리면 오른쪽(고주파)부터 줄어듭니다.</div>
+        </div>
+        <div class="d-step" data-fig="v" data-hl="c4a">
+          <div class="d-math">\(\htmlClass{tV}{v(\omega)} = d\omega/dk\)</div>
+          <div class="d-why">1장의 군속도. 영역 경계 근처(ω<sub>max</sub>)에서는 0이라 상태가 많아도(C 큼) 열을 못 나릅니다.</div>
+          <div class="d-look">파랑 곡선. 오른쪽 끝에서 0으로 떨어집니다.</div>
+        </div>
+        <div class="d-step" data-fig="tau" data-hl="c4a">
+          <div class="d-math">\(\htmlClass{tTau}{\tau(\omega)}\): 일정 / \(\propto \omega^{-2}\) (Umklapp 형태) / \(\propto \omega^{-4}\) (점결함, Rayleigh)</div>
+          <div class="d-why">τ를 정하는 산란 과정은 다음 장(Lecture 7–8)의 주제입니다. 여기서는 흔한 진동수 의존성 세 가지만 미리 비교합니다.</div>
+          <div class="d-look">보라 곡선(로그 축). 모형 버튼을 바꿔 보세요.</div>
+        </div>
+        <div class="d-step" data-fig="acc" data-hl="c4c">
+          <div class="d-math">\(\kappa_{\text{acc}}(\ell) = \displaystyle\int_{\ell' < \ell} d\kappa\)</div>
+          <div class="d-why">평균자유행로가 ℓ보다 짧은 포논이 κ에 얼마나 기여하는지 누적한 곡선. 시료 크기가 ℓ보다 작아지면 그보다 긴 ℓ의 기여가 잘려 나갑니다 (Lecture 9 나노 구조, 박막).</div>
+          <div class="d-look">오른쪽 아래 누적 그래프.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>열을 가장 많이 나르는 모드는 C, v, τ가 동시에 큰 곳, 보통 저·중주파 음향 포논입니다. 물질 사이를 비교하면 C는 Dulong-Petit 값으로 상한이 있고 v는 수 km/s 범위라 몇 배 차이에 그치지만, τ(ℓ)는 몇 자릿수씩 달라집니다. 그래서 κ를 이해하려면 결국 산란을 이해해야 합니다.</p>
+        <details><summary>확인 질문: τ ∝ ω⁻⁴(점결함)일 때 고주파 포논의 기여는 왜 거의 사라질까요?</summary><p>ω가 2배면 τ는 1/16이 됩니다. 고주파 포논은 v도 작아서(영역 경계) C v² τ가 급격히 줄어듭니다. 그래서 동위원소나 불순물은 주로 고주파 포논을 막습니다 (Lecture 8).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card controls">
+      <button class="primary" data-tau="const">τ 일정</button>
+      <button data-tau="umklapp">τ ∝ ω⁻²</button>
+      <button data-tau="rayleigh">τ ∝ ω⁻⁴</button>
+      <label>T/Θ <input type="range" id="t4" min="-1.5" max="0.3" step="0.01" value="-0.3"></label>
+    </div>
+    <div class="card"><p class="cap">진동수별: <span class="tC">C(ω)</span>, <span class="tV">v²(ω)</span>, <span class="tTau">τ(ω)</span> (로그), 맨 아래 = 곱 C v² τ (넓이 = κ). 가로축 ω/ω<sub>max</sub></p><canvas id="c4a" style="height:380px"></canvas></div>
+    <div class="row2">
+      <div class="card"><p class="cap">κ에 대한 기여 비율 (진동수 구간별)</p><canvas id="c4b" style="height:170px"></canvas></div>
+      <div class="card"><p class="cap">누적 κ vs 평균자유행로 ℓ (로그)</p><canvas id="c4c" style="height:170px"></canvas></div>
+    </div>
+    <div class="card controls"><div class="readout" id="r4"></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ 정리 -->
+<section class="summary" id="sum">
+  <h2>정리: 수송 법칙은 BTE의 거시적 극한 (Lecture 5 요약)</h2>
+  <p>구동력이 분포를 평형에서 조금 밀어내고(δf), 산란이 되돌립니다. 그 균형에서 흐름이 정해지고, 계수는 언제나 (담는 양) × (속도) × (수명)의 모양입니다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>수송</th><th>구동력</th><th>흐름</th><th>법칙</th><th>미시적 계수</th></tr></thead>
+      <tbody>
+        <tr><th>포논 열</th><td>−∇T</td><td>에너지 × 속도</td><td>q = −κ∇T</td><td>κ ~ Σ <span class="tC">C</span> <span class="tV">v²</span> <span class="tTau">τ</span></td></tr>
+        <tr><th>전자 전하</th><td>E</td><td>전하 × 속도</td><td>J = σE</td><td>σ ~ Σ e² v² τ (−∂f<sub>0</sub>/∂ε)</td></tr>
+        <tr><th>입자 확산</th><td>−∇n</td><td>개수 × 속도</td><td>Γ = −D∇n</td><td>D ~ v² τ</td></tr>
+        <tr><th>전자 열</th><td>−∇T</td><td>초과 에너지 × 속도</td><td>q<sub>e</sub> = −κ<sub>e</sub>∇T</td><td>κ<sub>e</sub> ~ C<sub>e</sub> v<sub>F</sub>² τ</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_05_scattering.html">5장으로 →</a> (Lecture 6–8).</b> τ는 어디서 오는가. 조화 결정에서는 모드끼리 에너지를 주고받지 않으므로(2장 STEP 1) 산란이 없습니다. 비조화 퍼텐셜이 3-포논 산란(Normal, Umklapp)을 만들고, 점결함과 경계가 더해져 Matthiessen 규칙으로 합쳐집니다.</p>
+</section>
+
+<footer>
+  <p>STEP 1–3의 막대는 포논을 한 가지 속력 v로 ±x 방향으로만 움직이는 입자로 단순화한 1차원 모형입니다. 산란되면 무작위 방향과 그 자리 온도 T(x)에 해당하는 에너지를 새로 받습니다(완화 시간 근사). 양 끝은 온도가 고정된 열원입니다. STEP 4는 1장의 원자 사슬 분산(K = M = a = 1)과 3장의 모드 비열을 쓰고, τ 모형의 계수는 임의 단위입니다.</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+function readHot() { C.hot = css('--hot'); }
+readHot();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readHot);
+// 에너지 → 색 (차가움 = 파랑, 뜨거움 = 빨강)
+function heat(e, lo, hi) {
+  const t = Math.max(0, Math.min(1, (e - lo) / (hi - lo)));
+  const a = [37, 99, 235], b = [201, 42, 42];
+  return `rgb(${a.map((v, i) => Math.round(v + t * (b[i] - v))).join(',')})`;
+}
+
+// ================================================================== STEP 1: 평형 포논 기체
+const P1 = { n: 60, x: [], y: [], s: [], e: [], events: [], t: 0 };
+for (let i = 0; i < P1.n; i++) { P1.x.push(Math.random()); P1.y.push(0.12 + 0.76 * Math.random()); P1.s.push(i % 2 ? 1 : -1); P1.e.push(-Math.log(1 - Math.random())); }
+const V1 = 0.08;
+function drawS1(dt) {
+  P1.t += dt;
+  for (let i = 0; i < P1.n; i++) {
+    const x0 = P1.x[i];
+    let x = x0 + P1.s[i] * V1 * dt;
+    if (x < 0) { x = -x; P1.s[i] = 1; }
+    if (x > 1) { x = 2 - x; P1.s[i] = -1; }
+    if (x0 < 0.5 && x >= 0.5) P1.events.push([P1.t, P1.e[i]]);
+    if (x0 >= 0.5 && x < 0.5) P1.events.push([P1.t, -P1.e[i]]);
+    P1.x[i] = x;
+  }
+  while (P1.events.length && P1.events[0][0] < P1.t - 25) P1.events.shift();
+  let R = 0, L = 0;
+  for (const [, e] of P1.events) e > 0 ? (R += e) : (L -= e);
+  const nR = P1.s.filter(s => s > 0).length;
+  const split = on('s1', 'pm', 'cancel', 'flux', 'need'), countPlane = on('s1', 'flux', 'cancel', 'need');
+
+  let { g, w, h } = fit(document.getElementById('c1a'));
+  const bx0 = 12, bx1 = w - 12, by0 = 10, by1 = h - 24, X = x => bx0 + x * (bx1 - bx0), Y = y => by0 + y * (by1 - by0);
+  g.fillStyle = C.bz; g.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+  g.strokeStyle = C.line; g.strokeRect(bx0, by0, bx1 - bx0, by1 - by0);
+  g.setLineDash([4, 4]); g.strokeStyle = countPlane ? C.accent : C.muted; g.lineWidth = countPlane ? 2 : 1;
+  g.beginPath(); g.moveTo(X(0.5), by0 - 4); g.lineTo(X(0.5), by1 + 4); g.stroke(); g.setLineDash([]);
+  for (let i = 0; i < P1.n; i++) {
+    const col = split ? (P1.s[i] > 0 ? C.wave : C.wave2) : C.fg, x = X(P1.x[i]), y = Y(P1.y[i]), r = 2.5 + 1.5 * Math.sqrt(P1.e[i]);
+    g.fillStyle = col; g.beginPath();
+    g.moveTo(x + P1.s[i] * r * 1.6, y); g.lineTo(x - P1.s[i] * r, y - r); g.lineTo(x - P1.s[i] * r, y + r); g.closePath(); g.fill();
+  }
+  text(g, split ? `→ ${nR}개   ← ${P1.n - nR}개` : `포논 ${P1.n}개, 모두 같은 속력 v`, bx0, h - 6, split ? C.fg : C.muted);
+
+  ({ g, w, h } = fit(document.getElementById('c1b')));
+  const mx = Math.max(R, L, 1) * 1.1, x0 = 70, x1 = w - 60, bh = 18;
+  [['→ 오른쪽', R, C.wave], ['← 왼쪽', L, C.wave2], ['알짜 q', R - L, C.accent]].forEach(([lab, val, col], i) => {
+    const y = 18 + i * (bh + 16);
+    g.globalAlpha = i === 2 && !countPlane ? 0.4 : 1;
+    text(g, lab, x0 - 8, y + 13, C.fg, 'right');
+    g.fillStyle = col;
+    const xa = i === 2 ? (x0 + x1) / 2 : x0, len = val / mx * (i === 2 ? (x1 - x0) / 2 : (x1 - x0));
+    g.fillRect(Math.min(xa, xa + len), y, Math.abs(len), bh);
+    if (i === 2) { g.strokeStyle = C.muted; g.beginPath(); g.moveTo(xa, y - 3); g.lineTo(xa, y + bh + 3); g.stroke(); }
+    text(g, val.toFixed(1), x1 + 6, y + 13, C.muted);
+    g.globalAlpha = 1;
+  });
+}
+
+// ================================================================== STEP 2, 3: 온도 기울기가 걸린 막대
+class Bar {
+  constructor(n, tau, dT) {
+    this.n = n; this.v = 0.12; this.tau = tau; this.setDT(dT);
+    this.x = new Float64Array(n); this.y = new Float64Array(n); this.s = new Int8Array(n); this.e = new Float64Array(n);
+    for (let i = 0; i < n; i++) { this.x[i] = Math.random(); this.y[i] = Math.random(); this.s[i] = Math.random() < 0.5 ? 1 : -1; this.e[i] = this.T(this.x[i]); }
+    this.q = 0; this.qInit = false; this.flash = []; this.t = 0; this.since = 0;
+    this.nb = 16; this.eR = new Float64Array(this.nb); this.eL = new Float64Array(this.nb); this.binInit = false;
+    this.trail = Array.from({ length: 6 }, () => []);
+  }
+  setDT(dT) { this.dT = dT; this.Th = 1 + dT / 2; this.Tc = 1 - dT / 2; this.reset(); }
+  reset() { this.since = 0; this.qSum = 0; this.qT = 0; }
+  T(x) { return this.Th + (this.Tc - this.Th) * x; }
+  step(dt) {
+    const h = 0.01, steps = Math.ceil(dt / h), hh = dt / steps, v = this.v, p = hh / this.tau;
+    for (let k = 0; k < steps; k++) {
+      let flux = 0;
+      for (let i = 0; i < this.n; i++) {
+        let x = this.x[i] + this.s[i] * v * hh;
+        if (x < 0) { x = -x; this.s[i] = 1; this.e[i] = this.Th; }
+        else if (x > 1) { x = 2 - x; this.s[i] = -1; this.e[i] = this.Tc; }
+        if (Math.random() < p) {
+          this.s[i] = Math.random() < 0.5 ? 1 : -1; this.e[i] = this.T(x);
+          if (i < 150 && this.flash.length < 60) this.flash.push([x, this.y[i], 0]);
+        }
+        this.x[i] = x;
+        flux += this.s[i] * v * this.e[i];
+      }
+      this.t += hh; this.since += hh;
+      if (this.since > 5) { this.qSum += flux * hh; this.qT += hh; }   // 정상 상태가 된 뒤의 누적 평균
+      const a = Math.min(1, hh / 15);
+      this.q = this.qInit ? this.q + a * (flux - this.q) : flux; this.qInit = true;
+    }
+    // 방향별 평균 에너지 (위치 구간마다)
+    const sR = new Float64Array(this.nb), cR = new Float64Array(this.nb), sL = new Float64Array(this.nb), cL = new Float64Array(this.nb);
+    for (let i = 0; i < this.n; i++) {
+      const b = Math.min(this.nb - 1, Math.floor(this.x[i] * this.nb));
+      if (this.s[i] > 0) { sR[b] += this.e[i]; cR[b]++; } else { sL[b] += this.e[i]; cL[b]++; }
+    }
+    const a = this.binInit ? Math.min(1, dt / 6) : 1;
+    for (let b = 0; b < this.nb; b++) {
+      if (cR[b]) this.eR[b] += a * (sR[b] / cR[b] - this.eR[b]);
+      if (cL[b]) this.eL[b] += a * (sL[b] / cL[b] - this.eL[b]);
+    }
+    this.binInit = true;
+    this.flash.forEach(f => { f[2] += dt; });
+    this.flash = this.flash.filter(f => f[2] < 1.2);
+    this.trail.forEach((tr, i) => { tr.push([this.x[i], this.e[i]]); if (tr.length > 70) tr.shift(); });
+  }
+  get kappaPred() { return this.n * this.v * this.v * this.tau; }   // C = n (입자당 de/dT = 1), 1D 라서 1/3 없음
+  get kappaBall() { return this.n * this.v / 2; }
+  get qMeas() { return this.qT > 1 ? this.qSum / this.qT : this.q; }
+  get kappaMeas() { return this.qMeas / this.dT; }
+}
+
+function drawBar(canvas, B, fig) {
+  const { g, w, h } = fit(canvas);
+  const bx0 = 34, bx1 = w - 34, by0 = 10, by1 = h - 22, X = x => bx0 + x * (bx1 - bx0), Y = y => by0 + 4 + y * (by1 - by0 - 8);
+  const grd = g.createLinearGradient(bx0, 0, bx1, 0);
+  grd.addColorStop(0, heat(B.Th, 0.2, 1.8)); grd.addColorStop(1, heat(B.Tc, 0.2, 1.8));
+  g.globalAlpha = fig === 'lin' ? 0.45 : 0.18; g.fillStyle = grd; g.fillRect(bx0, by0, bx1 - bx0, by1 - by0); g.globalAlpha = 1;
+  g.strokeStyle = C.line; g.strokeRect(bx0, by0, bx1 - bx0, by1 - by0);
+  g.fillStyle = heat(B.Th, 0.2, 1.8); g.fillRect(bx0 - 14, by0, 12, by1 - by0);
+  g.fillStyle = heat(B.Tc, 0.2, 1.8); g.fillRect(bx1 + 2, by0, 12, by1 - by0);
+  text(g, '뜨거움', bx0, h - 6, C.hot);
+  text(g, '차가움', bx1, h - 6, C.wave, 'right');
+  const dim = fig === 'coll' || fig === 'drift';
+  for (let i = 0; i < Math.min(220, B.n); i++) {
+    const x = X(B.x[i]), y = Y(B.y[i]);
+    g.globalAlpha = dim && i >= 6 ? 0.35 : 1;
+    g.fillStyle = heat(B.e[i], 0.2, 1.8);
+    g.beginPath(); g.moveTo(x + B.s[i] * 4.5, y); g.lineTo(x - B.s[i] * 3, y - 3); g.lineTo(x - B.s[i] * 3, y + 3); g.closePath(); g.fill();
+  }
+  g.globalAlpha = 1;
+  if (fig === 'drift' || fig === 'all') {
+    B.trail.forEach((tr, i) => {
+      g.lineWidth = 2;
+      for (let k = 1; k < tr.length; k++) {
+        if (Math.abs(tr[k][0] - tr[k - 1][0]) > 0.2) continue;
+        g.strokeStyle = heat(tr[k][1], 0.2, 1.8); g.globalAlpha = k / tr.length;
+        g.beginPath(); g.moveTo(X(tr[k - 1][0]), Y(B.y[i])); g.lineTo(X(tr[k][0]), Y(B.y[i])); g.stroke();
+      }
+      g.globalAlpha = 1;
+    });
+  }
+  if (fig === 'coll' || fig === 'all' || fig === 'lin') {
+    for (const [x, y, a] of B.flash) {
+      g.strokeStyle = C.wave2; g.globalAlpha = Math.max(0, 1 - a / 1.2); g.lineWidth = 1.5;
+      g.beginPath(); g.arc(X(x), Y(y), 3 + 10 * a, 0, 7); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+}
+
+function drawProfile(canvas, B, fig) {
+  const { g, w, h } = fit(canvas);
+  const f = frame(g, w, h, [0, 1], [B.Tc - 0.25, B.Th + 0.25], { l: 34, r: 34, t: 10, b: 22 });
+  const xs = Array.from({ length: B.nb }, (_, b) => (b + 0.5) / B.nb);
+  g.strokeStyle = C.muted; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+  g.beginPath(); g.moveTo(f.X(0), f.Y(B.Th)); g.lineTo(f.X(1), f.Y(B.Tc)); g.stroke(); g.setLineDash([]);
+  const strong = fig === 'df' || fig === 'meaning';
+  if (strong) {
+    g.fillStyle = C.bz; g.beginPath();
+    xs.forEach((x, b) => b ? g.lineTo(f.X(x), f.Y(B.eR[b])) : g.moveTo(f.X(x), f.Y(B.eR[b])));
+    for (let b = B.nb - 1; b >= 0; b--) g.lineTo(f.X(xs[b]), f.Y(B.eL[b]));
+    g.closePath(); g.fill();
+  }
+  for (const [arr, col] of [[B.eR, C.wave], [B.eL, C.wave2]]) {
+    g.strokeStyle = col; g.lineWidth = strong ? 2.5 : 1.8; g.beginPath();
+    xs.forEach((x, b) => b ? g.lineTo(f.X(x), f.Y(arr[b])) : g.moveTo(f.X(x), f.Y(arr[b])));
+    g.stroke();
+    xs.forEach((x, b) => atom(g, f.X(x), f.Y(arr[b]), 2.5, col));
+  }
+  if (fig === 'meaning') {
+    const ell = B.v * B.tau, xm = 0.5;
+    if (ell < 0.45) {
+      arrow(g, f.X(xm - ell), f.Y(B.T(xm - ell)), f.X(xm), f.Y(B.T(xm - ell)), C.wave, 2);
+      atom(g, f.X(xm - ell), f.Y(B.T(xm - ell)), 3.5, C.wave);
+      text(g, 'ℓ = vτ', f.X(xm - ell / 2), f.Y(B.T(xm - ell)) - 8, C.wave, 'center');
+    }
+  }
+  [B.Tc, 1, B.Th].forEach(v => text(g, v.toFixed(1), f.x0 - 4, f.Y(v) + 4, C.muted, 'right'));
+  text(g, '→ 방향', f.x1 + 4, f.Y(B.eR[B.nb - 1]) + 4, C.wave);
+  text(g, '← 방향', f.x1 + 4, f.Y(B.eL[B.nb - 1]) + 4, C.wave2);
+  text(g, '위치 x/L', f.x1, h - 6, C.muted, 'right');
+}
+
+const B2 = new Bar(1000, Math.pow(10, -0.4), 1);
+const tau2 = document.getElementById('tau2');
+tau2.addEventListener('input', () => { B2.tau = Math.pow(10, +tau2.value); });
+function drawS2(dt) {
+  B2.step(dt);
+  const fig = FIG.s2, ell = B2.v * B2.tau, mid = B2.nb / 2;
+  const gap = ((B2.eR[mid - 1] + B2.eR[mid]) - (B2.eL[mid - 1] + B2.eL[mid])) / 2;
+  drawBar(document.getElementById('c2a'), B2, fig);
+  drawProfile(document.getElementById('c2b'), B2, fig);
+  document.getElementById('r2').innerHTML =
+    `<span class="tTau">τ</span> = ${B2.tau.toFixed(2)} <span>&nbsp;ℓ = vτ =</span> ${ell.toFixed(3)} L<br>` +
+    `<span>가운데에서 (→) − (←) 에너지 차 =</span> ${gap.toFixed(3)} <span>&nbsp;예측 2ℓ·ΔT/L =</span> ${(2 * ell * B2.dT).toFixed(3)}` +
+    (ell > 0.3 ? '<br><span>ℓ이 막대 길이에 가까워 예측(확산)보다 작아집니다 (탄도 영역).</span>' : '');
+}
+
+// STEP 3
+const B3 = new Bar(1000, Math.pow(10, -0.4), 1);
+const dT3 = document.getElementById('dT3'), tau3 = document.getElementById('tau3');
+dT3.addEventListener('input', () => { B3.setDT(+dT3.value); });
+tau3.addEventListener('input', () => { B3.tau = Math.pow(10, +tau3.value); B3.reset(); });
+const S3 = { pts: [], qpts: [] };
+document.getElementById('b3clear').addEventListener('click', () => { S3.pts = []; S3.qpts = []; });
+// 처음 화면에 측정점이 보이도록 몇 개의 τ로 미리 짧게 돌려 둔다
+(function seed() {
+  for (const tau of [0.06, 0.2, 0.6, 2, 6]) {
+    const b = new Bar(600, tau, 1);
+    for (let k = 0; k < 125; k++) b.step(1);
+    S3.pts.push([tau, b.kappaMeas * 1000 / 600]);
+  }
+})();
+function record3() {
+  if (B3.since < 15) return;
+  const k = B3.kappaMeas, near = S3.pts.findIndex(p => Math.abs(Math.log10(p[0] / B3.tau)) < 0.03);
+  if (near >= 0) S3.pts[near] = [B3.tau, k]; else S3.pts.push([B3.tau, k]);
+  const nq = S3.qpts.findIndex(p => Math.abs(p[0] - B3.dT) < 0.05 && Math.abs(Math.log10(p[2] / B3.tau)) < 0.03);
+  if (nq >= 0) S3.qpts[nq] = [B3.dT, B3.qMeas, B3.tau]; else S3.qpts.push([B3.dT, B3.qMeas, B3.tau]);
+}
+
+function drawS3(dt) {
+  B3.step(dt); record3();
+  const fig = FIG.s3, kp = B3.kappaPred, km = B3.kappaMeas, kb = B3.kappaBall, ell = B3.v * B3.tau;
+  document.getElementById('r3').innerHTML =
+    `<span>q(측정) =</span> ${B3.qMeas.toFixed(2)} <span>&nbsp;κ(측정) = q·L/ΔT =</span> ${km.toFixed(2)}<br>` +
+    `<span>예측 κ = n</span><span class="tV">v²</span><span class="tTau">τ</span> <span>=</span> ${kp.toFixed(2)} <span>&nbsp;ℓ = vτ =</span> ${ell.toFixed(3)} L` +
+    (B3.since < 15 ? ' <span>&nbsp;(측정 안정화 중)</span>' : '');
+
+  // q vs ΔT
+  let { g, w, h } = fit(document.getElementById('c3a'));
+  const qmax = Math.max(Math.min(kp, kb) * 1.7, 1);
+  let f = frame(g, w, h, [0, 1.7], [0, qmax], { l: 34, r: 10, t: 10, b: 22 });
+  g.globalAlpha = on('s3', 'q', 'insert', 'fourier', 'iso') ? 1 : 0.5;
+  const xe = Math.min(1.7, qmax / kp);
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath(); g.moveTo(f.X(0), f.Y(0)); g.lineTo(f.X(xe), f.Y(kp * xe)); g.stroke();
+  S3.qpts.filter(p => Math.abs(Math.log10(p[2] / B3.tau)) < 0.03).forEach(p => atom(g, f.X(p[0]), f.Y(p[1]), 3.5, C.muted));
+  atom(g, f.X(B3.dT), f.Y(B3.qMeas), 5.5, C.accent);
+  g.globalAlpha = 1;
+  [0, 1].forEach(v => text(g, String(v), f.X(v), h - 6, C.muted, 'center'));
+  text(g, 'ΔT', f.x1, h - 6, C.muted, 'right');
+  text(g, 'q', f.x0 + 4, f.y1 + 10, C.muted);
+
+  // κ 막대
+  ({ g, w, h } = fit(document.getElementById('c3b')));
+  const kmx = Math.max(kp, km, 1) * 1.2;
+  f = frame(g, w, h, [0, 2], [0, kmx], { l: 34, r: 10, t: 10, b: 22 });
+  g.globalAlpha = on('s3', 'fourier', 'iso', 'ballistic') ? 1 : 0.5;
+  [[0, km, C.accent, '측정'], [1, kp, C.wave2, 'C v² τ']].forEach(([i, v, col, lab]) => {
+    const xa = f.X(i + 0.2), xb = f.X(i + 0.8);
+    g.fillStyle = col; g.fillRect(xa, f.Y(v), xb - xa, f.y0 - f.Y(v));
+    text(g, lab, (xa + xb) / 2, h - 6, C.fg, 'center');
+    text(g, v.toFixed(1), (xa + xb) / 2, f.Y(v) - 4, C.fg, 'center');
+  });
+  g.globalAlpha = 1;
+
+  // κ vs τ
+  ({ g, w, h } = fit(document.getElementById('c3c')));
+  const f2 = frame(g, w, h, [-1.4, 1.1], [-0.6, 2.4], { l: 40, r: 10, t: 10, b: 22 });
+  const LX = v => f2.X(Math.log10(v)), LY = v => f2.Y(Math.log10(Math.max(v, 1e-3)));
+  g.strokeStyle = C.grid; g.lineWidth = 1;
+  [0.1, 1, 10].forEach(v => { g.beginPath(); g.moveTo(LX(v), f2.y1); g.lineTo(LX(v), f2.y0); g.stroke(); text(g, String(v), LX(v), h - 6, C.muted, 'center'); });
+  [1, 10, 100].forEach(v => { g.beginPath(); g.moveTo(f2.x0, LY(v)); g.lineTo(f2.x1, LY(v)); g.stroke(); text(g, String(v), f2.x0 - 4, LY(v) + 4, C.muted, 'right'); });
+  const tauL = 1 / B3.v;
+  g.setLineDash([3, 3]); g.strokeStyle = on('s3', 'ballistic') ? C.accent : C.muted; g.lineWidth = on('s3', 'ballistic') ? 2 : 1;
+  g.beginPath(); g.moveTo(LX(tauL), f2.y1); g.lineTo(LX(tauL), f2.y0); g.stroke(); g.setLineDash([]);
+  text(g, 'ℓ = L', LX(tauL) - 4, f2.y1 + 10, on('s3', 'ballistic') ? C.accent : C.muted, 'right');
+  g.strokeStyle = C.wave2; g.lineWidth = 2; g.beginPath();
+  g.moveTo(LX(0.04), LY(1000 * B3.v * B3.v * 0.04)); g.lineTo(LX(12), LY(1000 * B3.v * B3.v * 12)); g.stroke();
+  g.setLineDash([4, 4]); g.strokeStyle = C.muted; g.lineWidth = 1.2; g.beginPath(); g.moveTo(f2.x0, LY(kb)); g.lineTo(f2.x1, LY(kb)); g.stroke(); g.setLineDash([]);
+  text(g, '탄도 한계 nv/2', f2.x0 + 4, LY(kb) - 5, C.muted);
+  text(g, '예측 n v² τ', LX(0.08), LY(1000 * B3.v * B3.v * 0.08) - 8, C.wave2);
+  S3.pts.forEach(([t, k]) => atom(g, LX(t), LY(k), 4, C.accent));
+  atom(g, LX(B3.tau), LY(Math.max(km, 1e-3)), 3, C.fg);
+  text(g, 'τ', f2.x1, h - 6, C.muted, 'right');
+}
+
+// ================================================================== STEP 4: 모드별 κ
+const S4 = { model: 'const', t: Math.pow(10, -0.3) };
+const t4 = document.getElementById('t4');
+t4.addEventListener('input', () => { S4.t = Math.pow(10, +t4.value); });
+document.querySelectorAll('[data-tau]').forEach(b => b.addEventListener('click', () => {
+  S4.model = b.dataset.tau;
+  document.querySelectorAll('[data-tau]').forEach(x => x.classList.toggle('primary', x === b));
+}));
+const cMode = x => { if (x < 1e-6) return 1; const e = Math.exp(-x), d = 1 - e; return x * x * e / (d * d); };
+const LB = 60;   // 경계 산란 길이 (아주 긴 파장의 τ가 무한대가 되지 않게)
+function tauOf(wn, t, model) {
+  const v = Math.sqrt(1 - wn * wn);
+  let r;
+  if (model === 'const') return 5;
+  if (model === 'umklapp') r = 2 * wn * wn * t * Math.exp(-1 / (3 * t));
+  else r = 2 * Math.pow(wn, 4);
+  return 1 / (r + v / LB);
+}
+function spectrum(t, model) {
+  const M = 400, rows = [];
+  for (let i = 0; i < M; i++) {
+    const wn = (i + 0.5) / M, D = (2 / Math.PI) / Math.sqrt(1 - wn * wn), C = cMode(wn / t) * D, v2 = 1 - wn * wn, tau = tauOf(wn, t, model);
+    rows.push({ wn, C, v2, tau, k: C * v2 * tau / M, ell: Math.sqrt(v2) * tau });
+  }
+  return rows;
+}
+
+function drawS4() {
+  const t = S4.t, rows = spectrum(t, S4.model), fig = FIG.s4;
+  const kap = rows.reduce((a, r) => a + r.k, 0);
+  const lowFrac = rows.filter(r => r.wn < 0.5).reduce((a, r) => a + r.k, 0) / kap;
+  const byEll = [...rows].sort((a, b) => a.ell - b.ell);
+  let acc = 0, ell50 = 0;
+  for (const r of byEll) { acc += r.k; if (!ell50 && acc >= kap / 2) ell50 = r.ell; }
+  document.getElementById('r4').innerHTML =
+    `T/Θ = ${t.toFixed(2)} <span>&nbsp;κ(임의 단위) =</span> ${kap.toFixed(2)}<br>` +
+    `<span>ω < ω_max/2 인 모드가 나르는 비율 =</span> ${(lowFrac * 100).toFixed(0)}% <span>&nbsp;κ의 절반을 나르는 모드의 ℓ <</span> ${ell50.toFixed(1)}`;
+
+  let { g, w, h } = fit(document.getElementById('c4a'));
+  const ph = (h - 22) / 4;
+  const panels = [
+    { key: 'C', lab: 'C(ω)', col: C.accent, ys: rows.map(r => r.C), log: false },
+    { key: 'v', lab: 'v²(ω)', col: C.wave, ys: rows.map(r => r.v2), log: false },
+    { key: 'tau', lab: 'τ(ω)', col: C.wave2, ys: rows.map(r => r.tau), log: true },
+    { key: 'sum', lab: 'C v² τ', col: C.fg, ys: rows.map(r => r.C * r.v2 * r.tau), log: false },
+  ];
+  panels.forEach((p, i) => {
+    const active = fig === p.key || (fig === 'sum' && p.key === 'sum') || fig === 'acc' && p.key === 'sum';
+    g.globalAlpha = active || !['C', 'v', 'tau'].includes(fig) ? 1 : 0.35;
+    let ys = p.ys, yr;
+    if (p.log) { ys = ys.map(v => Math.log10(v)); yr = [Math.min(...ys) - 0.2, Math.max(...ys) + 0.2]; }
+    else { const s = [...ys].sort((a, b) => a - b); yr = [0, (s[Math.floor(s.length * 0.98)] || 1) * 1.15]; }
+    const f = frame(g, w, 6 + (i + 1) * ph, [0, 1], yr, { l: 58, r: 10, t: 6 + i * ph + 6, b: 6 });
+    if (p.key === 'sum') {
+      g.fillStyle = C.bz; g.beginPath(); g.moveTo(f.X(0), f.Y(0));
+      rows.forEach((r, j) => g.lineTo(f.X(r.wn), f.Y(Math.min(ys[j], yr[1]))));
+      g.lineTo(f.X(1), f.Y(0)); g.closePath(); g.fill();
+    }
+    g.strokeStyle = p.col; g.lineWidth = active ? 2.6 : 1.8; g.beginPath();
+    rows.forEach((r, j) => { const y = f.Y(Math.min(ys[j], yr[1])); j ? g.lineTo(f.X(r.wn), y) : g.moveTo(f.X(r.wn), y); });
+    g.stroke();
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+    text(g, p.lab + (p.log ? ' (log)' : ''), 4, f.y1 + 12, p.col);
+    g.globalAlpha = 1;
+  });
+  [0, 0.5, 1].forEach(v => text(g, String(v), 58 + v * (w - 68), h - 6, C.muted, 'center'));
+
+  // 구간별 비율
+  ({ g, w, h } = fit(document.getElementById('c4b')));
+  const nbin = 10, bins = new Array(nbin).fill(0);
+  rows.forEach(r => { bins[Math.min(nbin - 1, Math.floor(r.wn * nbin))] += r.k / kap; });
+  let f = frame(g, w, h, [0, 1], [0, Math.max(...bins) * 1.2], { l: 30, r: 10, t: 10, b: 22 });
+  bins.forEach((b, i) => { g.fillStyle = C.accent; const xa = f.X(i / nbin) + 2, xb = f.X((i + 1) / nbin) - 2; g.fillRect(xa, f.Y(b), xb - xa, f.y0 - f.Y(b)); });
+  [0, 0.5, 1].forEach(v => text(g, String(v), f.X(v), h - 6, C.muted, 'center'));
+  text(g, 'ω/ω_max', f.x1, h - 6, C.muted, 'right');
+
+  // 누적 κ vs ℓ
+  ({ g, w, h } = fit(document.getElementById('c4c')));
+  g.globalAlpha = fig === 'acc' || !['C', 'v', 'tau'].includes(fig) ? 1 : 0.5;
+  const lmin = Math.max(1e-3, byEll[0].ell), lmax = byEll[byEll.length - 1].ell;
+  f = frame(g, w, h, [Math.log10(lmin), Math.log10(lmax) + 0.05], [0, 1.05], { l: 30, r: 10, t: 10, b: 22 });
+  g.strokeStyle = C.accent; g.lineWidth = 2.2; g.beginPath();
+  acc = 0;
+  byEll.forEach((r, j) => { acc += r.k; const X = f.X(Math.log10(Math.max(r.ell, lmin))), Y = f.Y(acc / kap); j ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+  g.stroke();
+  g.setLineDash([3, 3]); g.strokeStyle = C.muted; g.beginPath(); g.moveTo(f.x0, f.Y(0.5)); g.lineTo(f.x1, f.Y(0.5)); g.stroke(); g.setLineDash([]);
+  g.globalAlpha = 1;
+  [0, 0.5, 1].forEach(v => text(g, String(v), f.x0 - 4, f.Y(v) + 4, C.muted, 'right'));
+  text(g, `ℓ: ${lmin.toPrecision(2)} ~ ${lmax.toPrecision(2)} (log)`, f.x1, h - 6, C.muted, 'right');
+}
+
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs({});
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

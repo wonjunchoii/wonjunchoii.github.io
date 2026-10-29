@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>낮은 열전도와 비정질</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+/* 레이아웃: 단계마다 왼쪽은 유도, 오른쪽은 움직이는 원자. 좁은 화면에서는 위아래로 쌓는다. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #1b1f24;
+  --muted: #5b6470;
+  --line: #d6dbe2;
+  --grid: #e8ebf0;
+  --atom: #2b3138;
+  --accent: #d9480f;     /* 주목하는 원자, 힘 */
+  --wave: #1c6dd0;       /* 파동, 분산 곡선 */
+  --wave2: #7c3aed;      /* 접히는 파동 (k + G) */
+  --spring: #8a94a0;
+  --bz: rgba(28, 109, 208, 0.07);
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+    --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+    --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1a1d23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2e343c; --grid: #23272e;
+  --atom: #d9dde2; --accent: #ff7a3d; --wave: #5aa2ff; --wave2: #b28cff; --spring: #6b7480;
+  --bz: rgba(90, 162, 255, 0.09); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.7 var(--font-body);
+  word-break: keep-all; overflow-wrap: anywhere;
+  padding: 0 16px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { padding-block: 40px 20px; border-bottom: 1px solid var(--line); }
+header .course { font: 12px/1.4 var(--font-mono); color: var(--muted); letter-spacing: 0.04em; }
+header h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 10px; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; max-width: 68ch; color: var(--muted); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; font-size: 13px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+nav.toc b { font-family: var(--font-mono); color: var(--accent); font-weight: 500; margin-right: 4px; }
+
+section.step {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px;
+  padding-block: 44px; border-bottom: 1px solid var(--line);
+}
+@media (max-width: 880px) { section.step { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+.text { min-width: 0; }
+.text .num { font: 12px var(--font-mono); color: var(--accent); letter-spacing: 0.06em; }
+.text h2 { font-size: 22px; line-height: 1.3; margin: 4px 0 12px; font-weight: 600; text-wrap: balance; }
+.text p { margin: 0 0 12px; max-width: 62ch; }
+.text .note { font-size: 13px; color: var(--muted); }
+
+ol.derive { list-style: none; margin: 18px 0 10px; padding: 0; counter-reset: d; display: grid; gap: 8px; }
+ol.derive li {
+  counter-increment: d; position: relative; padding: 8px 12px 8px 40px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto;
+}
+ol.derive li::before {
+  content: counter(d); position: absolute; left: 12px; top: 9px;
+  font: 12px var(--font-mono); color: var(--muted);
+}
+ol.derive li .why { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+ol.derive li.now { border-color: var(--accent); }
+ol.derive li.box { border-width: 2px; border-color: var(--wave); }
+
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+button {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.viz { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.card .cap { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+canvas { display: block; width: 100%; touch-action: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; }
+.controls input[type=range] { width: 130px; accent-color: var(--wave); }
+.readout { font: 13px var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); }
+
+footer { padding-block: 32px; color: var(--muted); font-size: 13px; }
+footer p { max-width: 70ch; margin: 0 0 8px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+/* 3장부터: 직관 → 수식 → 이해 구역 */
+header .flow { margin-top: 10px; color: var(--fg); }
+.phase { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.p-int { border-top: 0; padding-top: 0; }
+.tag {
+  display: inline-block; font: 500 11px var(--font-mono); letter-spacing: 0.08em;
+  color: var(--bg); background: var(--muted); border-radius: 3px; padding: 1px 7px; margin-bottom: 8px;
+}
+.p-int .tag { background: var(--wave); }
+.p-math .tag { background: var(--fg); }
+.understand .tag { background: var(--accent); }
+.try { font-size: 14px; border-left: 3px solid var(--wave); padding: 4px 0 4px 12px; color: var(--fg); }
+.understand .content { display: none; }
+.understand.open .content { display: block; }
+.understand.open .locked { display: none; }
+.understand .locked { color: var(--muted); font-size: 13px; }
+.understand .content > p { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+details { margin-top: 10px; font-size: 14px; }
+summary { cursor: pointer; color: var(--fg); font-weight: 500; }
+summary:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+details p { margin: 8px 0 0; color: var(--muted); }
+section.summary { padding-block: 44px; border-bottom: 1px solid var(--line); }
+section.summary h2 { font-size: 22px; margin: 0 0 10px; font-weight: 600; }
+section.summary p { max-width: 70ch; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; min-width: 640px; font-size: 14px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tbody th { font-weight: 600; white-space: nowrap; }
+
+/* 4장부터: 한 줄씩 넘기는 유도 */
+:root { --hot: #c92a2a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hot: #ff6b6b; } }
+:root[data-theme="dark"] { --hot: #ff6b6b; }
+.tC { color: var(--accent); }
+.tV { color: var(--wave); }
+.tTau { color: var(--wave2); }
+.tGrad { color: var(--hot); }
+.legend-terms { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin: 8px 0 0; }
+.legend-terms span { font-weight: 600; }
+
+.deriv { margin-top: 6px; }
+.deriv:focus-visible { outline: 2px solid var(--wave); outline-offset: 4px; border-radius: 6px; }
+.d-step { display: none; }
+.d-step.past, .d-step.now { display: block; }
+.d-step.past {
+  padding: 4px 10px; margin-bottom: 4px; border-left: 2px solid var(--line);
+  opacity: 0.6; cursor: pointer; font-size: 13px; overflow-x: auto;
+}
+.d-step.past:hover { opacity: 0.9; border-left-color: var(--muted); }
+.d-step.past .d-why, .d-step.past .d-look { display: none; }
+.d-step.now {
+  margin: 8px 0; padding: 14px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px;
+}
+.d-step.now .d-math { font-size: 1.15em; overflow-x: auto; padding-block: 4px; }
+.d-why { margin-top: 8px; font-size: 14px; }
+.d-look { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.d-look::before { content: "그림에서 보기 → "; color: var(--wave); font-weight: 500; }
+.d-nav {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
+  background: var(--bg); padding-block: 8px; margin-top: 4px;
+}
+.deriv { display: flex; flex-direction: column; }
+.d-step.now { order: 0; }
+.d-past-label { order: 1; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.d-step.past { order: 2; }
+.d-dots { display: flex; gap: 6px; }
+.d-dots button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); background: transparent; }
+.d-dots button.done { background: var(--muted); }
+.d-dots button.cur { background: var(--accent); border-color: var(--accent); }
+.d-count { font: 12px var(--font-mono); color: var(--muted); }
+.d-hint { font-size: 12px; color: var(--muted); }
+
+
+.d-badge { font: 500 11px var(--font-mono); color: var(--wave); letter-spacing: 0.06em; margin-bottom: 4px; }
+.d-step.past .d-badge { display: none; }
+.d-step.key.now { border-left-color: var(--wave); }
+.d-step.key.past { border-left-color: var(--wave); opacity: 0.85; }
+.card { transition: border-color 0.2s, box-shadow 0.2s; }
+.card.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="course">Thermal Properties of Materials · Lecture 9 Low thermal conductivity, 2D materials, amorphous solids</div>
+  <h1>6장. 열을 막는 법, 그리고 포논이 아닌 열 전달</h1>
+  <p>5장까지는 큰 완전 결정에서 포논이 어떻게 산란되는지 봤습니다. 이번 장에서는 시료가 작을 때(탄도 수송), κ를 일부러 낮출 때(스펙트럼 공학), 2차원 물질에서 대칭이 산란을 막을 때, 그리고 결정이 아예 아닐 때(비정질) 열이 어떻게 흐르는지 봅니다.</p>
+  <p class="flow">각 단계는 <b>직관 → 수식 → 이해</b> 순서입니다. 수식은 <b>다음 ▶</b>(또는 키보드 →)으로 한 줄씩 넘기고, 그때마다 그 줄과 관련된 그림 칸이 주황 테두리로 강조됩니다. 현재 줄은 버튼 바로 아래에, 지난 줄은 그 밑에 쌓이고 누르면 그 줄로 돌아갑니다.</p>
+  <p class="legend-terms">색 약속: <span class="tGrad">뜨거움</span><span class="tV">차가움 / 포논</span><span class="tC">지금 보는 것 (결과)</span><span class="tTau">산란을 일으키는 것</span></p>
+  <nav class="toc" aria-label="단계">
+    <a href="phonon_05_scattering.html">← 5장</a>
+    <a href="#s1"><b>1</b>탄도와 확산</a>
+    <a href="#s2"><b>2</b>κ를 낮추는 법</a>
+    <a href="#s3"><b>3</b>2D 물질과 대칭</a>
+    <a href="#s4"><b>4</b>비정질 고체</a>
+    <a href="#sum"><b>정리</b></a>
+  </nav>
+</header>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1">
+  <div class="text">
+    <div class="num">STEP 1 · Lecture 9 Diffusive and ballistic transport</div>
+    <h2>시료가 작으면 푸리에 법칙이 깨진다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>4장의 막대를 다시 씁니다. 왼쪽은 뜨겁고 오른쪽은 차갑습니다. 이번에는 평균 자유 행로 ℓ(산란 사이 거리)를 시료 길이 L과 비교합니다. ℓ ≪ L이면 포논이 여러 번 산란되며 조금씩 나아가고(확산), ℓ ≳ L이면 벽에서 벽으로 곧장 날아갑니다(탄도).</p>
+      <p class="try">해 보기: ℓ/L 슬라이더를 왼쪽(확산)에서 오른쪽(탄도)으로 옮겨 보세요. 파란 포논의 궤적과, 아래 온도 그래프의 양 끝이 어떻게 바뀌나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s1" tabindex="0">
+        <div class="d-step" data-fig="diff" data-hl="c1a c1b" data-act="diff">
+          <div class="d-math">\(\ell \ll L:\quad q = -\kappa\,\nabla T,\quad \kappa = \tfrac13 C v \ell\)</div>
+          <div class="d-why">확산 수송. 포논이 산란을 여러 번 겪어 위치마다 국소 평형(온도)이 정의되고, 4장의 푸리에 법칙이 성립합니다.</div>
+          <div class="d-look">ℓ/L을 작게 했습니다. 궤적이 지그재그로 촘촘하고, 온도가 왼쪽 벽에서 오른쪽 벽까지 직선으로 이어집니다.</div>
+        </div>
+        <div class="d-step key" data-fig="ball" data-hl="c1a c1b" data-act="ball">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\ell \gtrsim L:\quad \text{벽에서 벽으로 곧장} \;\Rightarrow\; \text{경계에서 온도가 뜀}\)</div>
+          <div class="d-why">탄도 수송. 포논이 중간에서 거의 산란되지 않아 국소 평형이 없습니다. 안쪽 온도는 평평해지고 벽에서 온도가 뛰며(온도 불연속), 푸리에 법칙이 깨집니다.</div>
+          <div class="d-look">ℓ/L을 크게 했습니다. 궤적이 벽 사이를 곧게 오가고, 온도 그래프의 양 끝이 벽 온도에서 떨어져 있습니다(빨간 화살표).</div>
+        </div>
+        <div class="d-step" data-fig="size" data-hl="c1c">
+          <div class="d-math">\(\dfrac{\kappa_\text{eff}}{\kappa_\text{bulk}} \approx \dfrac{1}{1 + 2\ell/L}\)</div>
+          <div class="d-why">벽이 산란원 하나를 더한 것처럼 작용합니다(5장의 경계 산란). 이 막대 모형에서 정확히 나오는 식이고, 측정점이 이 곡선을 따릅니다. κ가 물질만이 아니라 크기와 모양에 따라 달라집니다.</div>
+          <div class="d-look">오른쪽 아래 그래프: 시료가 작아질수록(ℓ/L ↑) 실효 κ가 줄어듭니다.</div>
+        </div>
+        <div class="d-step" data-fig="nano" data-hl="c1c">
+          <div class="d-math">\(\text{저주파 포논(긴 ℓ)부터 먼저 막힘}\)</div>
+          <div class="d-why">저주파 포논은 평균 자유 행로가 길어서 크기 효과를 먼저 받습니다. 열전 소재에는 κ를 낮추는 방법이 되지만, 트랜지스터의 나노 크기 발열점(hot spot)에서는 열이 잘 빠지지 않는 문제가 됩니다 (Lecture 9: FinFET에서 실효 κ가 13배 감소).</div>
+          <div class="d-look">5장 STEP 5의 "경계" 구역이 시료를 줄일수록 넓어지는 것과 같은 이야기입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s1">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>푸리에 법칙은 "산란이 충분히 많아서 어디서나 온도를 정의할 수 있다"는 가정 위에 있습니다. 시료가 평균 자유 행로보다 작으면 그 가정이 깨지고, 경계에서 온도가 뛰며 κ가 크기에 따라 줄어듭니다.</p>
+        <details><summary>확인 질문: 같은 Si라도 두께 100 nm 박막의 κ가 덩어리보다 작은 이유는?</summary><p>상온 Si에서 열을 많이 나르는 포논의 평균 자유 행로는 수백 nm 이상이라, 100 nm 박막에서는 그 포논들이 표면에서 먼저 산란됩니다(ℓ ≳ L). 그만큼 실효 κ가 줄어듭니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">막대 속 포논 하나의 궤적. 왼쪽 벽 = 뜨거움, 오른쪽 벽 = 차가움</p><canvas id="c1a" style="height:150px"></canvas></div>
+    <div class="row2">
+      <div class="card"><p class="cap">위치별 온도 (측정). 점선 = 푸리에 법칙이 맞을 때의 직선</p><canvas id="c1b" style="height:190px"></canvas></div>
+      <div class="card"><p class="cap">실효 κ / 덩어리 κ vs ℓ/L. 선 = 1/(1 + 2ℓ/L), 점 = 측정</p><canvas id="c1c" style="height:190px"></canvas></div>
+    </div>
+    <div class="card controls">
+      <label>ℓ / L <input type="range" id="e1" min="-1.6" max="0.7" step="0.01" value="-1.1"></label>
+      <div class="readout" id="r1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2">
+  <div class="text">
+    <div class="num">STEP 2 · Lecture 9 How low can κ go?</div>
+    <h2>κ를 낮추는 법: 진동수마다 다른 걸로 막는다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>그래프의 넓이가 κ이고, 가로축은 포논의 진동수입니다. 열은 넓은 진동수 범위의 포논이 나눠 나르기 때문에, κ를 크게 낮추려면 여러 진동수 대역을 함께 막아야 합니다. 열전 소재가 쓰는 전략입니다.</p>
+      <p class="try">해 보기: 전략을 하나씩 켜 보세요. 각각 어느 진동수 대역을 깎나요? 셋을 다 켜면 κ가 몇 %로 떨어지나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s2" tabindex="0">
+        <div class="d-step" data-fig="base" data-hl="c2a" data-act="none">
+          <div class="d-math">\(\kappa = \dfrac13\displaystyle\int C(\omega)\,v^2\,\tau(\omega)\,d\omega\)</div>
+          <div class="d-why">4·5장의 식. 회색 윤곽이 아무 전략도 쓰지 않은 결정입니다(Umklapp만 있음).</div>
+          <div class="d-look">진동수별로 κ에 기여하는 양. 넓이 = κ.</div>
+        </div>
+        <div class="d-step" data-fig="alloy" data-hl="c2a" data-act="alloy">
+          <div class="d-math">\(\text{합금 · 점결함: } \tau^{-1} = A\omega^4\)</div>
+          <div class="d-why">질량이 다른 원자를 섞으면 Rayleigh 산란이 고주파 포논을 강하게 막습니다 (5장 STEP 5).</div>
+          <div class="d-look">합금을 켰습니다. 오른쪽(고주파) 부분이 깎입니다.</div>
+        </div>
+        <div class="d-step" data-fig="nano" data-hl="c2a" data-act="nano">
+          <div class="d-math">\(\text{나노구조 · 결정립계: } \tau^{-1} = v/d\)</div>
+          <div class="d-why">크기 d의 나노 입자나 결정립 경계는 평균 자유 행로가 긴 저주파 포논을 막습니다 (STEP 1).</div>
+          <div class="d-look">나노구조를 더했습니다. 왼쪽(저주파) 부분이 깎입니다.</div>
+        </div>
+        <div class="d-step" data-fig="res" data-hl="c2a" data-act="res">
+          <div class="d-math">\(\text{공명 산란: } \tau_R^{-1} = C\,\dfrac{\omega_0^2\,\omega^2}{(\omega_0^2 - \omega^2)^2}\)</div>
+          <div class="d-why">우리 속에 갇혀 흔들리는 원자나 분자(rattler, 예: 페로브스카이트의 MA⁺ 이온)가 고유 진동수 ω₀ 근처의 포논을 집중적으로 막습니다 (Lecture 9).</div>
+          <div class="d-look">공명 산란을 더했습니다. ω₀ 근처가 골짜기처럼 파입니다.</div>
+        </div>
+        <div class="d-step key" data-fig="all" data-hl="c2a c2b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\dfrac{1}{\tau} = \dfrac{1}{\tau_U} + \dfrac{1}{\tau_\text{합금}} + \dfrac{1}{\tau_\text{나노}} + \dfrac{1}{\tau_R}\)</div>
+          <div class="d-why">Matthiessen 규칙으로 더합니다. 각 전략이 서로 다른 대역을 맡으므로 함께 쓰면 효과가 커집니다(스펙트럼 공학). 무거운 원자, 복잡한 구조, 강한 비조화성은 바탕의 κ 자체를 낮춥니다.</div>
+          <div class="d-look">오른쪽 막대: 전략을 켤수록 남는 κ의 비율.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s2">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>열은 한 진동수의 포논이 아니라 넓은 대역이 나눠 나릅니다. 그래서 κ를 낮추려면 고주파(합금), 저주파(나노구조), 특정 대역(공명)을 각각 다른 방법으로 막아야 합니다. 전기는 잘 통하면서 열은 막아야 하는 열전 소재가 이 전략을 씁니다.</p>
+        <details><summary>확인 질문: 합금만 아주 많이 넣으면 κ를 0에 가깝게 만들 수 있을까요?</summary><p>아닙니다. 합금은 고주파만 막아서, 저주파 포논이 남아 열을 계속 나릅니다. 오른쪽에서 합금만 켰을 때 왼쪽 부분이 그대로 남는 것을 보세요. 저주파는 나노구조로 따로 막아야 합니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">진동수별 κ 기여 (넓이 = κ). 회색 윤곽 = 아무 전략도 쓰지 않은 결정, 주황 = 지금</p><canvas id="c2a" style="height:230px"></canvas></div>
+    <div class="card controls">
+      <label><input type="checkbox" id="x2alloy"> 합금 · 점결함 (고주파)</label>
+      <label><input type="checkbox" id="x2nano"> 나노구조 (저주파)</label>
+      <label><input type="checkbox" id="x2res"> 공명 산란 (ω₀ 근처)</label>
+    </div>
+    <div class="card"><p class="cap">남은 κ (아무 전략도 쓰지 않은 결정 = 100%)</p><canvas id="c2b" style="height:70px"></canvas></div>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3">
+  <div class="text">
+    <div class="num">STEP 3 · Lecture 9 graphene & h-BN</div>
+    <h2>2D 물질: 거울 대칭이 산란을 막는다</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>그래핀 한 장을 옆에서 봅니다. ZA 모드는 원자가 면에 수직(위아래)으로 출렁이는 굽힘 파동입니다. 판을 위아래로 뒤집어도(거울 대칭) 에너지는 똑같아야 합니다.</p>
+      <p class="try">해 보기: 아래 표에서 "공중에 뜬 그래핀"과 "기판 위 그래핀"을 바꿔 보세요. 어떤 산란이 막히고, 그 공통점은 무엇인가요(ZA 개수)?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s3" tabindex="0">
+        <div class="d-step" data-fig="mirror" data-hl="c3a">
+          <div class="d-math">\(U(u_z) = U(-u_z)\)</div>
+          <div class="d-why">공중에 뜬 한 장의 판은 위아래가 구별되지 않습니다. 그래서 판을 뒤집은 모양(−u<sub>z</sub>)도 에너지가 같습니다.</div>
+          <div class="d-look">실선 = 지금 판의 모양, 점선 = 위아래로 뒤집은 모양. 둘은 에너지가 같습니다.</div>
+        </div>
+        <div class="d-step" data-fig="parity" data-hl="c3a">
+          <div class="d-math">\(\text{ZA: } u_z \text{ (홀수)},\qquad \text{TA, LA: } u_x, u_y \text{ (짝수)}\)</div>
+          <div class="d-why">뒤집으면 ZA의 변위는 부호가 바뀌고, 면 안에서 움직이는 TA·LA는 그대로입니다.</div>
+          <div class="d-look">ZA(위아래 출렁임)만 뒤집힌 모양이 다릅니다.</div>
+        </div>
+        <div class="d-step key" data-fig="rule" data-hl="c3b" data-act="free">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(H' = \tfrac{1}{3!}\displaystyle\sum u\,u\,u\,\Phi \;\Rightarrow\; \text{ZA가 홀수 개인 항} = 0\)</div>
+          <div class="d-why">H′(5장의 3-포논 결합)도 뒤집어서 같아야 하므로 u<sub>z</sub>에 대해 짝수여야 합니다. ZA가 1개나 3개 들어간 산란은 금지되고, 0개나 2개만 허용됩니다.</div>
+          <div class="d-look">표: 공중에 뜬 그래핀에서 ZA가 홀수 개인 산란에 ✕가 붙습니다.</div>
+        </div>
+        <div class="d-step" data-fig="za" data-hl="c3b c3a">
+          <div class="d-math">\(\text{ZA 산란 통로 감소} \;\Rightarrow\; \tau_\text{ZA} \uparrow \;\Rightarrow\; \text{ZA가 κ의 약 75\%}\)</div>
+          <div class="d-why">ZA는 저주파라 포논 수도 많은데, 산란 통로까지 적어 수명이 깁니다. 그래서 공중에 뜬 그래핀의 κ는 2000–3000 W/m·K로 매우 큽니다 (Lecture 9).</div>
+          <div class="d-look">표 아래 막대: 막힌 통로의 비율.</div>
+        </div>
+        <div class="d-step" data-fig="sub" data-hl="c3a c3b" data-act="sub">
+          <div class="d-math">\(\text{기판, 층간 결합} \;\Rightarrow\; U(u_z) \neq U(-u_z) \;\Rightarrow\; \kappa \downarrow\)</div>
+          <div class="d-why">아래에 기판이 있으면 위와 아래가 달라져 대칭이 깨집니다. 금지됐던 산란이 열리고, κ가 약 600 W/m·K로 떨어집니다.</div>
+          <div class="d-look">기판 위로 바꿨습니다. ✕가 사라지고 모든 통로가 열립니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s3">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>대칭이 있으면 어떤 산란은 계산하기도 전에 0이 됩니다(선택 규칙). 공중에 뜬 그래핀은 거울 대칭 덕분에 ZA 포논의 산란 통로가 절반가량 닫혀 열을 아주 잘 전합니다. 기판에 올리면 대칭이 깨져 그 통로가 열립니다.</p>
+        <details><summary>확인 질문: 그래핀 두 장(이중층)의 κ가 한 장보다 작은 이유는?</summary><p>층 사이 결합 때문에 각 층에서 보면 위와 아래가 달라져 거울 대칭이 깨집니다. 금지됐던 ZA 산란이 일부 열려서 κ가 줄어듭니다 (Lecture 9: 1층 2000–3000, 2층 1400–1900 W/m·K).</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">그래핀을 옆에서 본 모습. <span style="color:var(--accent)">━ 지금 모양 (ZA 출렁임)</span> <span style="color:var(--muted)">┅ 위아래로 뒤집은 모양</span></p><canvas id="c3a" style="height:170px"></canvas></div>
+    <div class="card"><p class="cap">3-포논 산란 통로 (Lecture 9 선택 규칙)</p>
+      <div class="controls" style="margin-bottom:8px"><button class="primary" id="b3free">공중에 뜬 그래핀</button><button id="b3sub">기판 위 그래핀</button></div>
+      <div class="tablewrap" style="margin:0"><table id="t3" style="min-width:0;width:100%"></table></div>
+      <canvas id="c3b" style="height:46px;margin-top:8px"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4">
+  <div class="text">
+    <div class="num">STEP 4 · Lecture 9 Amorphous solids</div>
+    <h2>비정질 고체: 파동이 퍼지지 못할 때</h2>
+    <div class="phase p-int">
+      <span class="tag">직관</span>
+      <p>같은 원자 사슬의 가운데 원자를 한 번 칩니다. 위는 원자가 규칙적으로 놓인 결정, 아래는 질량과 용수철이 제멋대로인 비정질입니다. 막대 높이는 원자마다의 진동 에너지입니다.</p>
+      <p class="try">해 보기: "다시 치기"를 눌러 두 사슬에서 에너지가 퍼지는 모습을 비교하세요. 결정에서는 어떤 모양으로 퍼지고, 비정질에서는 어떻게 되나요?</p>
+    </div>
+    <div class="phase p-math">
+      <span class="tag">수식</span>
+      <div class="d-nav"><button class="d-prev">◀ 이전</button><span class="d-dots"></span><span class="d-count"></span><button class="d-next primary">다음 ▶</button></div>
+      <div class="deriv" data-for="s4" tabindex="0">
+        <div class="d-step" data-fig="crystal" data-hl="c4a">
+          <div class="d-math">\(\text{결정: 정규 모드 = 평면파} \;\Rightarrow\; \text{에너지가 } v_g \text{로 퍼짐}\)</div>
+          <div class="d-why">주기성 덕분에 모드가 1장의 평면파이고, 에너지가 일정한 속도로 양쪽으로 퍼져 나갑니다.</div>
+          <div class="d-look">위 사슬: 에너지 봉우리가 일정한 속도로 양쪽 끝을 향해 갑니다.</div>
+        </div>
+        <div class="d-step" data-fig="amorph" data-hl="c4a">
+          <div class="d-math">\(\text{비정질: 모드가 평면파가 아님} \;\Rightarrow\; v_g,\ \tau \text{를 정의하기 어려움}\)</div>
+          <div class="d-why">무질서한 구조에서는 정규 모드가 사인파가 아니어서, 4장의 "포논 = 속도 v로 달리다 τ마다 산란되는 입자" 그림이 잘 맞지 않습니다.</div>
+          <div class="d-look">아래 사슬: 에너지가 가운데 근처에 머물거나 아주 천천히 번집니다.</div>
+        </div>
+        <div class="d-step" data-fig="einstein" data-hl="c4a">
+          <div class="d-math">\(\kappa_E = \dfrac13 n c\, v\, \ell,\quad \ell \approx a,\; \tau_E \approx \dfrac{\pi}{\omega_E} \;\Rightarrow\; \kappa_E = \dfrac{n^{1/3}k_B^2}{\pi\hbar}\,T_E\,\dfrac{x^2e^x}{(e^x-1)^2}\)</div>
+          <div class="d-why">Einstein(1911)의 그림: 각 원자가 같은 진동수로 떠는 독립 진동자이고, 에너지가 반 주기마다 이웃으로 무작위로 건너갑니다(random walk). 결정에서는 실험보다 20배 이상 작게 나왔지만(KCl), 비정질에는 잘 맞는 출발점입니다.</div>
+          <div class="d-look">비정질 사슬에서 에너지가 이웃으로 조금씩 번지는 모습이 이 그림입니다.</div>
+        </div>
+        <div class="d-step" data-fig="cp" data-hl="c4b">
+          <div class="d-math">\(\text{Cahill-Pohl: } \ell(\omega) = \tfrac{\lambda}{2} \;\Rightarrow\; \kappa_{\min} \approx \dfrac{1}{2.48}\,k_B\,n^{2/3}\,(2v_T + v_L)\)</div>
+          <div class="d-why">평균 자유 행로가 아무리 짧아도 파장의 절반보다 짧을 수는 없다는 가정으로 κ의 바닥값(최소 열전도도)을 얻습니다. 원자 밀도와 음속만으로 정해집니다.</div>
+          <div class="d-look">아래 그림: 낮은 진동수 모드는 아직 파동 모양이라 이 그림이 맞습니다.</div>
+        </div>
+        <div class="d-step key" data-fig="af" data-hl="c4b">
+          <div class="d-badge">핵심 결과</div>
+          <div class="d-math">\(\text{propagon } (D = v^2\tau/3) \;\cdot\; \text{diffuson (무작위 걷기)} \;\cdot\; \text{locon } (D = 0)\)</div>
+          <div class="d-why">Allen-Feldman: 비정질의 모드는 세 종류입니다. 저주파는 파동처럼 퍼지는 propagon, 중간은 이웃 모드로 건너가며 퍼지는 diffuson, 고주파는 한곳에 갇힌 locon(열을 나르지 못함).</div>
+          <div class="d-look">아래 그림: 버튼으로 세 모드의 모양을 비교하세요. 오른쪽 점 그래프는 모드가 원자 몇 개에 퍼져 있는지(참여 비율)입니다. 진동수가 높을수록 갇힙니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phase understand" data-after="s4">
+      <span class="tag">이해</span>
+      <p class="locked">수식을 끝까지 넘기면 나타납니다.</p>
+      <div class="content">
+        <p>결정의 열전도는 "평면파 포논이 달리다 산란된다"는 그림으로 설명됩니다. 비정질에서는 모드 자체가 평면파가 아니라서, 저주파 일부만 파동처럼 나르고(propagon), 대부분은 이웃으로 건너가며 천천히 나르고(diffuson), 고주파는 갇혀서 나르지 못합니다(locon). 그래서 비정질의 κ는 작고, 바닥값(κ<sub>min</sub>) 근처에 있습니다.</p>
+        <details><summary>확인 질문: 유리(비정질 SiO₂)의 κ가 결정 석영보다 훨씬 작은 이유는?</summary><p>결정 석영에서는 평면파 포논이 길게 달리지만, 유리에서는 대부분의 모드가 diffuson이나 locon이라 에너지가 무작위로 조금씩 건너가거나 갇힙니다. 평균 자유 행로가 원자 간격 수준(파장의 절반)까지 짧아진 셈이라 κ가 바닥값 근처가 됩니다.</p></details>
+      </div>
+    </div>
+  </div>
+  <div class="viz">
+    <div class="card"><p class="cap">가운데 원자를 한 번 쳤을 때 원자별 진동 에너지. 위 = 결정, 아래 = 비정질</p><canvas id="c4a" style="height:220px"></canvas><div class="controls" style="margin-top:6px"><button class="primary" id="b4kick">다시 치기</button><span class="readout" id="r4"></span></div></div>
+    <div class="card"><p class="cap">비정질 사슬의 정규 모드 모양 (원자별 변위)</p>
+      <div class="controls" style="margin-bottom:6px"><button class="primary" data-mode4="p">propagon (저주파)</button><button data-mode4="d">diffuson (중간)</button><button data-mode4="l">locon (고주파)</button></div>
+      <canvas id="c4b" style="height:200px"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 정리 -->
+<section class="summary" id="sum">
+  <h2>정리: 열 전달의 세 가지 그림 (Lecture 9)</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>이론</th><th>열을 나르는 것</th><th>잘 맞는 물질</th></tr></thead>
+      <tbody>
+        <tr><th>Peierls BTE (4–5장)</th><td>포논 입자 (평면파, 산란으로 τ)</td><td>단순한 결정 (Si, 다이아몬드)</td></tr>
+        <tr><th>Allen-Feldman</th><td>모드 사이 결합 (파동처럼, diffuson)</td><td>유리, 비정질</td></tr>
+        <tr><th>Wigner (통합)</th><td>입자 + 모드 사이 결맞음</td><td>복잡한 결정, 유리</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="next"><b><a href="phonon_07_electrons.html">7장으로 →</a> (Lecture 10).</b> 지금까지는 부도체의 포논이었습니다. 금속에서는 전자가 열과 전기를 함께 나르고, 전자도 불순물·포논·다른 전자에 산란됩니다. 같은 BTE와 Matthiessen 규칙으로 금속의 저항 ρ(T)와 Wiedemann-Franz 법칙을 봅니다.</p>
+</section>
+
+<footer>
+  <p>STEP 1은 4장과 같은 1차원 막대 모형(한 가지 속력, 벽에서 열원 온도로 재설정, 완화 시간 근사)이고, 이 모형에서는 κ_eff/κ_bulk = 1/(1 + 2ℓ/L)이 정확히 나옵니다. STEP 2는 5장의 Debye-Callaway 적분에 산란 항을 더한 것이고 계수는 임의 단위입니다. STEP 4는 원자 120개 사슬이며, 비정질은 질량과 용수철 상수를 무작위로(±60%) 바꾼 1차원 모형입니다. 1차원에서는 무질서가 있으면 결국 모든 모드가 갇히지만, 저주파일수록 갇힌 길이가 길어 이 크기에서는 파동처럼 보입니다.</p>
+</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+'use strict';
+
+// ------------------------------------------------------------------ 수식
+function renderMath() {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }],
+      throwOnError: false, trust: true, strict: false,
+    });
+  }
+}
+if (document.readyState === 'complete') renderMath(); else window.addEventListener('load', renderMath);
+
+// ------------------------------------------------------------------ 유도 한 줄씩
+const revealed = {};
+function showLines(id, n) {
+  const items = [...document.querySelectorAll(`ol.derive[data-for="${id}"] li`)];
+  n = Math.max(1, Math.min(items.length, n));
+  revealed[id] = n;
+  items.forEach((li, i) => { li.hidden = i >= n; li.classList.toggle('now', i === n - 1 && n < items.length); });
+  const btn = document.querySelector(`[data-next="${id}"]`);
+  btn.disabled = n >= items.length;
+}
+document.querySelectorAll('ol.derive').forEach(ol => showLines(ol.dataset.for, 1));
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.next) showLines(t.dataset.next, revealed[t.dataset.next] + 1);
+  if (t.dataset.all) showLines(t.dataset.all, 99);
+  if (t.dataset.reset) showLines(t.dataset.reset, 1);
+});
+
+// ------------------------------------------------------------------ 캔버스 도우미
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+let C = {};
+function readColors() {
+  for (const k of ['bg', 'panel', 'fg', 'muted', 'line', 'grid', 'atom', 'accent', 'wave', 'wave2', 'spring', 'bz']) C[k] = css('--' + k);
+  C.mono = css('--font-mono');
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = `11px ${C.mono}`;
+  return { g, w, h };
+}
+
+function spring(g, x1, x2, y, color, coils = 7, amp = 5, width = 1.4) {
+  const len = x2 - x1, lead = Math.min(6, Math.abs(len) * 0.15);
+  g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+  g.moveTo(x1, y); g.lineTo(x1 + lead, y);
+  const n = coils * 2, seg = (len - 2 * lead) / n;
+  for (let i = 1; i <= n; i++) g.lineTo(x1 + lead + seg * (i - 0.5), y + (i % 2 ? -amp : amp));
+  g.lineTo(x2 - lead, y); g.lineTo(x2, y); g.stroke();
+}
+
+function atom(g, x, y, r, fill, ring) {
+  g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fillStyle = fill; g.fill();
+  if (ring) { g.lineWidth = 2; g.strokeStyle = ring; g.beginPath(); g.arc(x, y, r + 3.5, 0, 2 * Math.PI); g.stroke(); }
+}
+
+function arrow(g, x1, y1, x2, y2, color, width = 2, head = 7) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  if (L < 1) return;
+  const ux = dx / L, uy = dy / L, h = Math.min(head, L * 0.6);
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = width;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 - ux * h * 0.8, y2 - uy * h * 0.8); g.stroke();
+  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - ux * h - uy * h * 0.5, y2 - uy * h + ux * h * 0.5);
+  g.lineTo(x2 - ux * h + uy * h * 0.5, y2 - uy * h - ux * h * 0.5); g.closePath(); g.fill();
+}
+
+function wall(g, x, y, h, side) {
+  g.strokeStyle = C.muted; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, y - h / 2); g.lineTo(x, y + h / 2); g.stroke();
+  g.lineWidth = 1;
+  for (let i = -h / 2; i < h / 2; i += 6) { g.beginPath(); g.moveTo(x, y + i); g.lineTo(x + side * 6, y + i + 6); g.stroke(); }
+}
+
+function text(g, s, x, y, color, align = 'left', base = 'alphabetic') {
+  g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y);
+}
+
+// 간단한 축: 영역과 변환 함수
+function frame(g, w, h, xr, yr, pad = { l: 34, r: 10, t: 10, b: 24 }) {
+  const x0 = pad.l, x1 = w - pad.r, y0 = h - pad.b, y1 = pad.t;
+  const X = v => x0 + (v - xr[0]) / (xr[1] - xr[0]) * (x1 - x0);
+  const Y = v => y0 - (v - yr[0]) / (yr[1] - yr[0]) * (y0 - y1);
+  return { X, Y, x0, x1, y0, y1 };
+}
+
+// 화면에 보이는 캔버스만 그린다
+const visible = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? visible.add(e.target.closest('section').id) : visible.delete(e.target.closest('section').id)));
+document.querySelectorAll('section.step').forEach(s => io.observe(s));
+
+const TIME_SCALE = 2.2;     // 화면 1초 = 시뮬레이션 시간 2.2 (ω = 2 가 약 0.7 Hz)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const FIG = {};
+const on = (id, ...figs) => figs.includes(FIG[id]);
+function readHot() { C.hot = css('--hot'); }
+readHot();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readHot);
+// 에너지 → 색 (차가움 = 파랑, 뜨거움 = 빨강)
+function heat(e, lo, hi) {
+  const t = Math.max(0, Math.min(1, (e - lo) / (hi - lo)));
+  const a = [37, 99, 235], b = [201, 42, 42];
+  return `rgb(${a.map((v, i) => Math.round(v + t * (b[i] - v))).join(',')})`;
+}
+
+
+
+// ================================================================== STEP 1: 탄도와 확산
+// 4장과 같은 1차원 막대 모형 (입자, 한 가지 속력, 벽에서 열원 온도로 재설정, 완화 시간 근사)
+class Bar {
+  constructor(n, tau) {
+    this.n = n; this.v = 0.12; this.tau = tau; this.Th = 1.5; this.Tc = 0.5;
+    this.x = new Float64Array(n); this.s = new Int8Array(n); this.e = new Float64Array(n);
+    for (let i = 0; i < n; i++) { this.x[i] = Math.random(); this.s[i] = Math.random() < 0.5 ? 1 : -1; this.e[i] = this.T(this.x[i]); }
+    this.nb = 12; this.prof = new Float64Array(this.nb); this.profInit = false; this.reset();
+  }
+  T(x) { return this.Th + (this.Tc - this.Th) * x; }
+  reset() { this.since = 0; this.qSum = 0; this.qT = 0; }
+  step(dt) {
+    const h = 0.01, steps = Math.ceil(dt / h), hh = dt / steps, v = this.v, p = hh / this.tau;
+    for (let k = 0; k < steps; k++) {
+      let flux = 0;
+      for (let i = 0; i < this.n; i++) {
+        let x = this.x[i] + this.s[i] * v * hh;
+        if (x < 0) { x = -x; this.s[i] = 1; this.e[i] = this.Th; }
+        else if (x > 1) { x = 2 - x; this.s[i] = -1; this.e[i] = this.Tc; }
+        if (Math.random() < p) { this.s[i] = Math.random() < 0.5 ? 1 : -1; this.e[i] = this.T(x); }
+        this.x[i] = x; flux += this.s[i] * v * this.e[i];
+      }
+      this.since += hh;
+      if (this.since > 5) { this.qSum += flux * hh; this.qT += hh; }
+    }
+    const sum = new Float64Array(this.nb), cnt = new Float64Array(this.nb);
+    for (let i = 0; i < this.n; i++) { const b = Math.min(this.nb - 1, Math.floor(this.x[i] * this.nb)); sum[b] += this.e[i]; cnt[b]++; }
+    const a = this.profInit ? Math.min(1, dt / 8) : 1;
+    for (let b = 0; b < this.nb; b++) if (cnt[b]) this.prof[b] += a * (sum[b] / cnt[b] - this.prof[b]);
+    this.profInit = true;
+  }
+  get kappaRatio() { return this.qT > 1 ? (this.qSum / this.qT) / (this.n * this.v * this.v * this.tau) : NaN; }
+}
+const e1 = document.getElementById('e1');
+const S1 = { ell: Math.pow(10, +e1.value), walker: { x: 0.2, y: 0.5, a: 0.4, left: 0 }, trail: [], pts: [] };
+const B1 = new Bar(1000, S1.ell / 0.12);
+function setEll(lg) { e1.value = lg; S1.ell = Math.pow(10, lg); B1.tau = S1.ell / B1.v; B1.reset(); S1.trail = []; }
+e1.addEventListener('input', () => setEll(+e1.value));
+// 처음 화면에 측정점이 보이도록 몇 개의 ℓ/L 로 미리 돌려 둔다
+(function seed1() {
+  for (const ell of [0.05, 0.2, 0.6, 1.5, 4]) {
+    const b = new Bar(500, ell / 0.12);
+    for (let k = 0; k < 90; k++) b.step(1);
+    S1.pts.push([ell, b.kappaRatio]);
+  }
+})();
+function walkerStep(dt) {
+  // 2D 그림용 포논: 평균 거리 ℓ마다 방향이 무작위로 바뀌고, 벽에서는 반사
+  const w = S1.walker, AR = 0.28, speed = 0.35 * dt / TIME_SCALE;
+  let left = speed;
+  while (left > 0) {
+    if (w.left <= 0) w.left = -S1.ell * Math.log(1 - Math.random());
+    const d = Math.min(left, w.left, 0.004);
+    w.x += Math.cos(w.a) * d; w.y += Math.sin(w.a) * d / AR;
+    if (w.x < 0) { w.x = -w.x; w.a = Math.PI - w.a; } if (w.x > 1) { w.x = 2 - w.x; w.a = Math.PI - w.a; }
+    if (w.y < 0) { w.y = -w.y; w.a = -w.a; } if (w.y > 1) { w.y = 2 - w.y; w.a = -w.a; }
+    w.left -= d; left -= d;
+    if (w.left <= 0) w.a = Math.random() * 6.283;
+    S1.trail.push([w.x, w.y]);
+  }
+  while (S1.trail.length > 700) S1.trail.shift();
+}
+function drawS1(dt) {
+  B1.step(dt); walkerStep(dt);
+  const ell = S1.ell, theory = 1 / (1 + 2 * ell), meas = B1.kappaRatio;
+  document.getElementById('r1').innerHTML =
+    `<span>ℓ/L =</span> ${ell < 0.1 ? ell.toFixed(3) : ell.toFixed(2)} <span>&nbsp;→</span> <b>${ell < 0.15 ? '확산' : ell > 0.8 ? '탄도' : '중간'}</b><br><span>κ_eff/κ_bulk: 이론</span> ${theory.toFixed(2)} <span>, 측정</span> ${isNaN(meas) ? '측정 중' : meas.toFixed(2)}`;
+
+  // 궤적
+  let { g, w, h: H } = fit(document.getElementById('c1a'));
+  const x0 = 22, x1 = w - 22, y0 = 12, y1 = H - 12, X = v => x0 + v * (x1 - x0), Y = v => y0 + v * (y1 - y0);
+  g.fillStyle = C.bz; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+  g.fillStyle = C.hot; g.fillRect(x0 - 8, y0, 8, y1 - y0);
+  g.fillStyle = C.wave; g.fillRect(x1, y0, 8, y1 - y0);
+  g.strokeStyle = C.line; g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  g.strokeStyle = C.wave; g.lineWidth = 1.3; g.globalAlpha = 0.8; g.beginPath();
+  S1.trail.forEach(([a, b], i) => i ? g.lineTo(X(a), Y(b)) : g.moveTo(X(a), Y(b))); g.stroke(); g.globalAlpha = 1;
+  atom(g, X(S1.walker.x), Y(S1.walker.y), 5, C.accent);
+
+  // 온도 분포
+  ({ g, w, h: H } = fit(document.getElementById('c1b')));
+  const f = frame(g, w, H, [0, 1], [0.4, 1.6], { l: 30, r: 12, t: 12, b: 22 });
+  g.setLineDash([4, 4]); g.strokeStyle = C.muted; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(f.X(0), f.Y(B1.Th)); g.lineTo(f.X(1), f.Y(B1.Tc)); g.stroke(); g.setLineDash([]);
+  const xs = Array.from({ length: B1.nb }, (_, b) => (b + 0.5) / B1.nb);
+  g.strokeStyle = C.accent; g.lineWidth = 2.2; g.beginPath();
+  xs.forEach((x, b) => b ? g.lineTo(f.X(x), f.Y(B1.prof[b])) : g.moveTo(f.X(x), f.Y(B1.prof[b]))); g.stroke();
+  xs.forEach((x, b) => atom(g, f.X(x), f.Y(B1.prof[b]), 3, C.accent));
+  atom(g, f.X(0), f.Y(B1.Th), 5, C.hot); atom(g, f.X(1), f.Y(B1.Tc), 5, C.wave);
+  // 벽에서의 온도 차이 (끝 칸을 벽까지 직선으로 늘린 값과 벽 온도의 차)
+  const slope = (B1.prof[B1.nb - 1] - B1.prof[0]) / (xs[B1.nb - 1] - xs[0]);
+  const tL = B1.prof[0] - slope * xs[0], tR = B1.prof[B1.nb - 1] + slope * (1 - xs[B1.nb - 1]);
+  const jump = (B1.Th - tL) / (B1.Th - B1.Tc);
+  if (jump > 0.06) {
+    arrow(g, f.X(0) + 8, f.Y(B1.Th), f.X(0) + 8, f.Y(tL), C.hot, 2);
+    arrow(g, f.X(1) - 8, f.Y(B1.Tc), f.X(1) - 8, f.Y(tR), C.hot, 2);
+    text(g, '경계에서 온도가 뜀', f.X(0.5), f.y1 + 4, C.hot, 'center');
+  }
+  text(g, '뜨거운 벽', f.X(0), H - 5, C.hot);
+  text(g, '차가운 벽', f.X(1), H - 5, C.wave, 'right');
+
+  // κ_eff / κ_bulk
+  ({ g, w, h: H } = fit(document.getElementById('c1c')));
+  const fk = frame(g, w, H, [Math.log10(0.02), Math.log10(6)], [0, 1.1], { l: 30, r: 12, t: 12, b: 22 });
+  const LX = v => fk.X(Math.log10(v));
+  g.strokeStyle = C.line; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(fk.x0, fk.y0); g.lineTo(fk.x1, fk.y0); g.moveTo(fk.x0, fk.y1); g.lineTo(fk.x0, fk.y0); g.stroke();
+  [0.1, 1].forEach(v => { g.beginPath(); g.moveTo(LX(v), fk.y0); g.lineTo(LX(v), fk.y0 + 4); g.stroke(); text(g, String(v), LX(v), fk.y0 + 15, C.muted, 'center'); });
+  [0, 0.5, 1].forEach(v => text(g, String(v), fk.x0 - 5, fk.Y(v) + 4, C.muted, 'right'));
+  g.strokeStyle = C.wave; g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= 120; i++) { const v = Math.pow(10, Math.log10(0.02) + (Math.log10(6) - Math.log10(0.02)) * i / 120); i ? g.lineTo(LX(v), fk.Y(1 / (1 + 2 * v))) : g.moveTo(LX(v), fk.Y(1 / (1 + 2 * v))); }
+  g.stroke();
+  S1.pts.forEach(([v, k]) => atom(g, LX(v), fk.Y(k), 3.5, C.muted));
+  if (!isNaN(meas)) atom(g, LX(ell), fk.Y(meas), 6, C.accent);
+  g.setLineDash([3, 3]); g.strokeStyle = C.accent; g.beginPath(); g.moveTo(LX(ell), fk.y1); g.lineTo(LX(ell), fk.y0); g.stroke(); g.setLineDash([]);
+  text(g, '← 확산', fk.x0 + 4, fk.y0 - 6, C.muted);
+  text(g, '탄도 →', fk.x1 - 4, fk.y0 - 6, C.muted, 'right');
+  text(g, 'ℓ/L', fk.x1, H - 5, C.muted, 'right');
+}
+
+// ================================================================== STEP 2: 스펙트럼 공학
+const T2 = 0.5, A2 = 100, N2 = 8, C2 = 2, W0 = 0.5;
+const x2 = { alloy: document.getElementById('x2alloy'), nano: document.getElementById('x2nano'), res: document.getElementById('x2res') };
+const cM2 = x => { if (x < 1e-6) return 1; const e = Math.exp(-x), d = 1 - e; return x * x * e / (d * d); };
+function spec2(o) {
+  const M = 300, ws = [], ys = [];
+  for (let i = 1; i <= M; i++) {
+    const w = i / M;
+    let r = 1e-3 + 100 * w * w * T2 * Math.exp(-1 / (3 * T2));       // 바탕: Umklapp
+    if (o.alloy) r += A2 * w ** 4;
+    if (o.nano) r += N2;
+    if (o.res) r += C2 * W0 * W0 * w * w / ((W0 * W0 - w * w) ** 2 + 1e-4);
+    ws.push(w); ys.push(cM2(w / T2) * w * w / r);
+  }
+  return { ws, ys, k: ys.reduce((a, b) => a + b, 0) / M };
+}
+const BASE2 = spec2({});
+function drawS2() {
+  const o = { alloy: x2.alloy.checked, nano: x2.nano.checked, res: x2.res.checked }, sp = spec2(o), frac = sp.k / BASE2.k;
+  let { g, w, h: H } = fit(document.getElementById('c2a'));
+  const ymax = Math.max(...BASE2.ys) * 1.12;
+  const f = frame(g, w, H, [0, 1], [0, ymax], { l: 14, r: 12, t: 18, b: 24 });
+  // 바탕 윤곽
+  g.fillStyle = C.grid; g.beginPath(); g.moveTo(f.X(0), f.y0);
+  BASE2.ws.forEach((x, i) => g.lineTo(f.X(x), f.Y(BASE2.ys[i]))); g.lineTo(f.X(1), f.y0); g.closePath(); g.fill();
+  g.strokeStyle = C.muted; g.lineWidth = 1.2; g.setLineDash([4, 3]); g.beginPath();
+  BASE2.ws.forEach((x, i) => i ? g.lineTo(f.X(x), f.Y(BASE2.ys[i])) : g.moveTo(f.X(x), f.Y(BASE2.ys[i]))); g.stroke(); g.setLineDash([]);
+  // 지금
+  g.globalAlpha = 0.35; g.fillStyle = C.accent; g.beginPath(); g.moveTo(f.X(0), f.y0);
+  sp.ws.forEach((x, i) => g.lineTo(f.X(x), f.Y(sp.ys[i]))); g.lineTo(f.X(1), f.y0); g.closePath(); g.fill(); g.globalAlpha = 1;
+  g.strokeStyle = C.accent; g.lineWidth = 2.4; g.beginPath();
+  sp.ws.forEach((x, i) => i ? g.lineTo(f.X(x), f.Y(sp.ys[i])) : g.moveTo(f.X(x), f.Y(sp.ys[i]))); g.stroke();
+  // 전략이 막는 대역 표시
+  const band = (a, b, lab, on) => {
+    if (!on) return;
+    g.fillStyle = C.wave2; g.globalAlpha = 0.12; g.fillRect(f.X(a), f.y1, f.X(b) - f.X(a), f.y0 - f.y1); g.globalAlpha = 1;
+    text(g, lab, (f.X(a) + f.X(b)) / 2, f.y1 - 4, C.wave2, 'center');
+  };
+  band(0.6, 1, '합금이 막음', o.alloy); band(0, 0.25, '나노구조가 막음', o.nano); band(W0 - 0.06, W0 + 0.06, '공명', o.res);
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(f.x0, f.y0); g.lineTo(f.x1, f.y0); g.stroke();
+  text(g, '← 저주파', f.x0, H - 6, C.muted);
+  text(g, '고주파 →', f.x1, H - 6, C.muted, 'right');
+  text(g, '진동수 ω', (f.x0 + f.x1) / 2, H - 6, C.muted, 'center');
+
+  ({ g, w, h: H } = fit(document.getElementById('c2b')));
+  const bx0 = 12, bx1 = w - 12, by = 14, bh = 22;
+  g.fillStyle = C.grid; g.fillRect(bx0, by, bx1 - bx0, bh);
+  g.fillStyle = C.accent; g.fillRect(bx0, by, (bx1 - bx0) * frac, bh);
+  text(g, `κ = ${(frac * 100).toFixed(0)}%`, bx0 + 8, by + 15, '#fff');
+  text(g, '100%', bx1, by + bh + 14, C.muted, 'right');
+}
+Object.values(x2).forEach(el => el.addEventListener('change', drawS2));
+
+// ================================================================== STEP 3: 2D 물질과 대칭
+const S3 = { sub: false, t: 0 };
+const ROWS3 = [['ZA + ZA → ZA', 3], ['ZA + TA → TA', 1], ['ZA + TA → LA', 1], ['TA + LA → ZA', 1], ['ZA + ZA → TA', 2], ['ZA + ZA → LA', 2], ['TA + LA → LA', 0], ['LA + LA → TA', 0]];
+const b3free = document.getElementById('b3free'), b3sub = document.getElementById('b3sub');
+function setSub(v) {
+  S3.sub = v; b3free.classList.toggle('primary', !v); b3sub.classList.toggle('primary', v);
+  const zaChip = n => `<span style="color:var(--accent);font-weight:600">${'ZA ×' + n}</span>`;
+  document.getElementById('t3').innerHTML = '<thead><tr><th>산란</th><th>ZA 개수</th><th>' + (v ? '기판 위' : '공중에 뜬 판') + '</th></tr></thead><tbody>' +
+    ROWS3.map(([lab, n]) => {
+      const blocked = !v && n % 2 === 1;
+      return `<tr><td>${lab}</td><td>${n ? zaChip(n) : '<span style="color:var(--muted)">0</span>'} ${n % 2 ? '<span style="color:var(--muted)">(홀수)</span>' : ''}</td><td style="font-weight:600;color:${blocked ? 'var(--hot)' : 'var(--wave)'}">${blocked ? '✕ 금지' : '✓ 허용'}</td></tr>`;
+    }).join('') + '</tbody>';
+  drawBar3();
+}
+function drawBar3() {
+  const { g, w, h: H } = fit(document.getElementById('c3b'));
+  const za = ROWS3.filter(r => r[1] > 0), blocked = S3.sub ? 0 : za.filter(r => r[1] % 2 === 1).length;
+  const bx0 = 4, bx1 = w - 4, bh = 14;
+  g.fillStyle = C.wave; g.fillRect(bx0, 4, bx1 - bx0, bh);
+  g.fillStyle = C.hot; g.fillRect(bx0, 4, (bx1 - bx0) * blocked / za.length, bh);
+  text(g, `ZA가 들어간 통로 ${za.length}개 중 ${blocked}개 막힘` + (blocked ? ' → ZA 수명 ↑, κ 매우 큼' : ' → 모두 열림, κ 감소'), bx0, 36, blocked ? C.hot : C.wave);
+}
+b3free.addEventListener('click', () => setSub(false));
+b3sub.addEventListener('click', () => setSub(true));
+setSub(false);
+function drawS3(dt) {
+  S3.t += dt / TIME_SCALE;
+  const { g, w, h: H } = fit(document.getElementById('c3a'));
+  const n = 34, x0 = 20, x1 = w - 20, sp = (x1 - x0) / (n - 1), cy = H * 0.45, A = 22, k = 2 * Math.PI / 16;
+  const uz = j => A * Math.sin(k * j - 2.2 * S3.t);
+  if (S3.sub) {
+    g.fillStyle = C.grid; g.fillRect(x0 - 10, cy + A + 18, x1 - x0 + 20, H - (cy + A + 18) - 4);
+    g.strokeStyle = C.line; g.lineWidth = 1;
+    for (let x = x0 - 10; x < x1 + 10; x += 10) { g.beginPath(); g.moveTo(x, H - 4); g.lineTo(x + 10, cy + A + 18); g.stroke(); }
+    text(g, '기판: 아래쪽만 있음 → 위아래가 다름', x0, H - 8, C.fg);
+  }
+  // 거울면
+  g.setLineDash([2, 4]); g.strokeStyle = C.muted; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(x0 - 10, cy); g.lineTo(x1 + 10, cy); g.stroke(); g.setLineDash([]);
+  text(g, '거울면 z = 0', x0 - 10, cy + A + 14, C.muted);
+  // 뒤집은 모양 (점선)
+  g.globalAlpha = S3.sub ? 0.35 : 1;
+  g.setLineDash([5, 4]); g.strokeStyle = C.muted; g.lineWidth = 1.4; g.beginPath();
+  for (let j = 0; j < n; j++) { const x = x0 + j * sp, y = cy + uz(j); j ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+  // 지금 모양
+  g.strokeStyle = C.accent; g.lineWidth = 2; g.beginPath();
+  for (let j = 0; j < n; j++) { const x = x0 + j * sp, y = cy - uz(j); j ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke();
+  for (let j = 0; j < n; j++) atom(g, x0 + j * sp, cy - uz(j), 3.5, C.atom);
+  text(g, S3.sub ? '뒤집은 모양은 기판에 더 가까워 에너지가 다름 ✕' : '뒤집은 모양(점선)도 에너지가 같음', x0, 14, S3.sub ? C.hot : C.fg);
+}
+
+// ================================================================== STEP 4: 비정질 고체
+let seed4 = 11;
+const rnd4 = () => { seed4 = (seed4 * 16807) % 2147483647; return seed4 / 2147483647; };
+const N4 = 120;
+const MA = Array.from({ length: N4 }, () => 0.4 + 1.2 * rnd4()), KA = Array.from({ length: N4 + 1 }, () => 0.4 + 1.2 * rnd4());
+const MC = new Float64Array(N4).fill(1), KC = new Float64Array(N4 + 1).fill(1);
+function makeChain4(m, K) { return { m, K, u: new Float64Array(N4), v: new Float64Array(N4), a: new Float64Array(N4) }; }
+const CH4 = { c: makeChain4(MC, KC), a: makeChain4(MA, KA), t: 0 };
+function force4(ch) {
+  const { u, a, m, K } = ch;
+  for (let i = 0; i < N4; i++) {
+    const ul = i > 0 ? u[i - 1] : 0, ur = i < N4 - 1 ? u[i + 1] : 0;
+    a[i] = (K[i + 1] * (ur - u[i]) - K[i] * (u[i] - ul)) / m[i];
+  }
+}
+function kick4() {
+  for (const ch of [CH4.c, CH4.a]) { ch.u.fill(0); ch.v.fill(0); ch.v[N4 >> 1] = 1 / Math.sqrt(ch.m[N4 >> 1]); force4(ch); }
+  CH4.t = 0;
+}
+kick4();
+document.getElementById('b4kick').addEventListener('click', kick4);
+function energy4(ch) {
+  const { u, v, m, K } = ch, e = new Float64Array(N4);
+  for (let i = 0; i < N4; i++) {
+    const ul = i > 0 ? u[i - 1] : 0, ur = i < N4 - 1 ? u[i + 1] : 0;
+    e[i] = 0.5 * m[i] * v[i] * v[i] + 0.25 * K[i] * (u[i] - ul) ** 2 + 0.25 * K[i + 1] * (ur - u[i]) ** 2;
+  }
+  return e;
+}
+// 비정질 사슬의 정규 모드 (삼중대각 고유값 분해)
+function tqli(d, e, z) {
+  const n = d.length;
+  for (let i = 1; i < n; i++) e[i - 1] = e[i];
+  e[n - 1] = 0;
+  for (let l = 0; l < n; l++) {
+    let iter = 0, m;
+    do {
+      for (m = l; m < n - 1; m++) { const dd = Math.abs(d[m]) + Math.abs(d[m + 1]); if (Math.abs(e[m]) <= 1e-14 * dd) break; }
+      if (m !== l) {
+        if (iter++ === 80) break;
+        let g = (d[l + 1] - d[l]) / (2 * e[l]), r = Math.hypot(g, 1);
+        g = d[m] - d[l] + e[l] / (g + (g >= 0 ? r : -r));
+        let s = 1, c = 1, p = 0, i, under = false;
+        for (i = m - 1; i >= l; i--) {
+          let f = s * e[i]; const b = c * e[i];
+          r = Math.hypot(f, g); e[i + 1] = r;
+          if (r === 0) { d[i + 1] -= p; e[m] = 0; under = true; break; }
+          s = f / r; c = g / r; g = d[i + 1] - p; r = (d[i] - g) * s + 2 * c * b; p = s * r; d[i + 1] = g + p; g = c * r - b;
+          for (let k = 0; k < n; k++) { f = z[k][i + 1]; z[k][i + 1] = s * z[k][i] + c * f; z[k][i] = c * z[k][i] - s * f; }
+        }
+        if (under) continue;
+        d[l] -= p; e[l] = g; e[m] = 0;
+      }
+    } while (m !== l);
+  }
+}
+const MODES4 = (() => {
+  const d = new Float64Array(N4), e = new Float64Array(N4);
+  for (let i = 0; i < N4; i++) { d[i] = (KA[i] + KA[i + 1]) / MA[i]; if (i > 0) e[i] = -KA[i] / Math.sqrt(MA[i - 1] * MA[i]); }
+  const z = Array.from({ length: N4 }, (_, i) => { const r = new Float64Array(N4); r[i] = 1; return r; });
+  tqli(d, e, z);
+  const list = Array.from(d).map((lam, j) => {
+    let s2 = 0, s4 = 0; const shape = new Float64Array(N4);
+    for (let i = 0; i < N4; i++) { const q = z[i][j] * z[i][j]; s2 += q; s4 += q * q; shape[i] = z[i][j] / Math.sqrt(MA[i]); }
+    return { w: Math.sqrt(Math.max(lam, 0)), pr: s2 * s2 / (N4 * s4), shape };
+  });
+  return list.sort((a, b) => a.w - b.w);
+})();
+// 대표 모드 고르기: propagon = 가장 낮은 모드 중 하나, diffuson = ω≈0.7 근처에서 퍼져 있지만 불규칙한 모드, locon = 가장 갇힌 고주파 모드
+const PICK4 = (() => {
+  let d = 0, best = 1e9;
+  MODES4.forEach((q, j) => { if (q.pr > 0.2 && q.pr < 0.45) { const s = Math.abs(q.w - 0.7); if (s < best) { best = s; d = j; } } });
+  let l = N4 - 1, lo = 1e9;
+  MODES4.forEach((q, j) => { if (q.w > 2 && q.pr < lo) { lo = q.pr; l = j; } });
+  return { p: 2, d, l };
+})();
+const S4 = { mode: 'p', t: 0 };
+document.querySelectorAll('[data-mode4]').forEach(b => b.addEventListener('click', () => {
+  S4.mode = b.dataset.mode4;
+  document.querySelectorAll('[data-mode4]').forEach(x => x.classList.toggle('primary', x === b));
+}));
+function drawS4(dt) {
+  const h = 0.05, steps = Math.ceil(dt * 3 / h);
+  for (let s = 0; s < steps; s++) for (const ch of [CH4.c, CH4.a]) {
+    for (let i = 0; i < N4; i++) { ch.v[i] += 0.5 * h * ch.a[i]; ch.u[i] += h * ch.v[i]; }
+    force4(ch);
+    for (let i = 0; i < N4; i++) ch.v[i] += 0.5 * h * ch.a[i];
+  }
+  CH4.t += steps * h;
+  if (CH4.t > 75) kick4();
+  S4.t += dt / TIME_SCALE;
+  const ec = energy4(CH4.c), ea = energy4(CH4.a), mid = N4 >> 1;
+  const spread = e => { let s = 0, w = 0; e.forEach((v, i) => { s += v * (i - mid) ** 2; w += v; }); return Math.sqrt(s / w); };
+  const near = e => { let a = 0, b = 0; e.forEach((v, i) => { b += v; if (Math.abs(i - mid) <= 10) a += v; }); return a / b; };
+  document.getElementById('r4').innerHTML = `<span>t =</span> ${CH4.t.toFixed(0)} <span>&nbsp;친 자리 ±10칸에 남은 에너지: 결정</span> ${(near(ec) * 100).toFixed(0)}%<span>, 비정질</span> ${(near(ea) * 100).toFixed(0)}%`;
+
+  let { g, w, h: H } = fit(document.getElementById('c4a'));
+  const rowH = (H - 20) / 2, x0 = 10, x1 = w - 10, bw = (x1 - x0) / N4;
+  [[ec, '결정 (규칙적)', C.wave], [ea, '비정질 (무질서)', C.accent]].forEach(([e, lab, col], r) => {
+    const base = 14 + (r + 1) * rowH - 6, top = 14 + r * rowH + 14;
+    g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, base); g.lineTo(x1, base); g.stroke();
+    const sc = (base - top) / 0.12;                      // 원자 하나의 에너지가 전체의 12%면 꽉 참
+    g.fillStyle = col;
+    for (let i = 0; i < N4; i++) { const hh = Math.min(base - top, e[i] / 0.5 * sc); g.fillRect(x0 + i * bw, base - hh, Math.max(1, bw - 0.5), hh); }
+    text(g, lab, x0, top - 2, col);
+  });
+  text(g, '↑ 친 자리', x0 + mid * bw, H - 2, C.muted, 'center');
+
+  // 모드 모양 + 참여 비율
+  ({ g, w, h: H } = fit(document.getElementById('c4b')));
+  const split = Math.round(w * 0.64), md = MODES4[PICK4[S4.mode]];
+  const amp = Math.max(...md.shape.map(Math.abs)) || 1, osc = Math.cos(md.w * S4.t * 2.5);
+  const fm = frame(g, split, H, [0, N4 - 1], [-1.15, 1.15], { l: 10, r: 8, t: 18, b: 20 });
+  g.strokeStyle = C.line; g.lineWidth = 1; g.beginPath(); g.moveTo(fm.x0, fm.Y(0)); g.lineTo(fm.x1, fm.Y(0)); g.stroke();
+  const col = { p: C.wave, d: C.wave2, l: C.accent }[S4.mode];
+  for (let i = 0; i < N4; i++) {
+    const y = md.shape[i] / amp * osc;
+    g.strokeStyle = col; g.lineWidth = 1.2; g.beginPath(); g.moveTo(fm.X(i), fm.Y(0)); g.lineTo(fm.X(i), fm.Y(y)); g.stroke();
+  }
+  const nm = { p: 'propagon: 사슬 전체에 퍼진 파동', d: 'diffuson: 퍼져 있지만 불규칙', l: 'locon: 원자 몇 개에 갇힘' }[S4.mode];
+  text(g, `${nm} (ω = ${md.w.toFixed(2)})`, fm.x0, 12, col);
+  text(g, '원자 번호 →', fm.x1, H - 4, C.muted, 'right');
+  // 참여 비율 vs 진동수
+  const fp = frame(g, w, H, [0, 3.0], [0, 0.75], { l: split + 26, r: 8, t: 18, b: 20 });
+  g.strokeStyle = C.line; g.beginPath(); g.moveTo(fp.x0, fp.y1); g.lineTo(fp.x0, fp.y0); g.lineTo(fp.x1, fp.y0); g.stroke();
+  MODES4.forEach(q => atom(g, fp.X(q.w), fp.Y(q.pr), 1.8, C.muted));
+  atom(g, fp.X(md.w), fp.Y(md.pr), 5, col);
+  text(g, '퍼진 정도', fp.x0 + 2, 12, C.muted);
+  text(g, '진동수 →', fp.x1, H - 4, C.muted, 'right');
+}
+
+// ------------------------------------------------------------------ 줄에 맞춰 그림 바꾸기
+const ACTS6 = {
+  s1: a => setEll(a === 'diff' ? -1.4 : 0.4),
+  s2: a => { x2.alloy.checked = a !== 'none'; x2.nano.checked = a === 'nano' || a === 'res'; x2.res.checked = a === 'res'; drawS2(); },
+  s3: a => setSub(a === 'sub'),
+};
+
+// ------------------------------------------------------------------ 한 줄씩 넘기는 유도
+// d-step 속성: data-fig = 그림이 반응할 상태, data-hl = 강조할 캔버스 id, data-act = 그림을 그 줄에 맞게 바꾸는 동작
+function setupDerivs(ACTS) {
+  document.querySelectorAll('.deriv').forEach(el => {
+    const id = el.dataset.for, steps = [...el.querySelectorAll('.d-step')], sec = el.closest('section');
+    const nav = el.previousElementSibling, dots = nav.querySelector('.d-dots');
+    const prev = nav.querySelector('.d-prev'), next = nav.querySelector('.d-next'), count = nav.querySelector('.d-count');
+    const box = document.querySelector(`.understand[data-after="${id}"]`);
+    const pastLabel = document.createElement('div');
+    pastLabel.className = 'd-past-label'; pastLabel.textContent = '지금까지의 유도 (누르면 그 줄로)';
+    el.appendChild(pastLabel);
+    let cur = 0;
+    function go(i, init) {
+      cur = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => { s.classList.toggle('past', j < cur); s.classList.toggle('now', j === cur); });
+      [...dots.children].forEach((d, j) => { d.classList.toggle('done', j < cur); d.classList.toggle('cur', j === cur); });
+      count.textContent = `${cur + 1} / ${steps.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      pastLabel.hidden = cur === 0;
+      const st = steps[cur];
+      FIG[id] = st.dataset.fig || '';
+      sec.querySelectorAll('.viz .card').forEach(c => c.classList.remove('hl'));
+      (st.dataset.hl || '').split(/\s+/).filter(Boolean).forEach(cid => { const c = document.getElementById(cid); if (c) c.closest('.card').classList.add('hl'); });
+      if (!init && st.dataset.act && ACTS[id]) ACTS[id](st.dataset.act);   // 처음 열 때는 그림을 바꾸지 않음
+      if (box && cur === steps.length - 1) box.classList.add('open');
+    }
+    steps.forEach((s, i) => {
+      const d = document.createElement('button');
+      d.setAttribute('aria-label', `${i + 1}번째 줄로`);
+      d.addEventListener('click', () => go(i));
+      dots.appendChild(d);
+      s.addEventListener('click', () => { if (s.classList.contains('past')) go(i); });
+    });
+    prev.addEventListener('click', () => go(cur - 1));
+    next.addEventListener('click', () => go(cur + 1));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(cur + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { go(cur - 1); e.preventDefault(); }
+    });
+    go(0, true);
+  });
+}
+setupDerivs(ACTS6);
+
+// ------------------------------------------------------------------ 루프
+const drawers = { s1: drawS1, s2: drawS2, s3: drawS3, s4: drawS4 };
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * TIME_SCALE * (reduced ? 0.4 : 1);
+  last = now;
+  for (const id of Object.keys(drawers)) if (visible.has(id) || !visible.size) drawers[id](dt);
+  requestAnimationFrame(loop);
+}
+Object.values(drawers).forEach(d => d(0.001));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

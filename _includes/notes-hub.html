@@ -1,0 +1,62 @@
+{%- comment -%}
+  Hub for a series of standalone HTML notes.
+  Usage in a post: include notes-hub.html with data=site.data.<name>.
+  Styles: /assets/css/notes-hub.css, behaviour: /assets/js/notes-hub.js
+{%- endcomment -%}
+{%- assign hub = include.data -%}
+{%- assign total = 0 -%}
+{%- for part in hub.parts -%}{%- assign total = total | plus: part.chapters.size -%}{%- endfor -%}
+<div class="nh">
+  <link rel="stylesheet" href="{{ '/assets/css/notes-hub.css' | relative_url }}">
+  <div class="nh-head">
+    <div>
+      <div class="nh-course">{{ hub.course }}</div>
+      <div class="nh-stats">{{ total }}개 장 / {{ hub.parts.size }}개 파트</div>
+    </div>
+  </div>
+  {%- for part in hub.parts %}
+  {%- assign first = part.chapters | first -%}
+  {%- assign last = part.chapters | last %}
+  <section class="nh-part">
+    <div class="nh-part-head">
+      <span class="nh-part-label">{{ part.label }}</span>
+      <span class="nh-part-name">{{ part.name }}</span>
+      <span class="nh-part-range">{% if first.num == last.num %}{{ first.num }}장{% else %}{{ first.num }}-{{ last.num }}장{% endif %}</span>
+    </div>
+    <ol class="nh-grid">
+      {%- for ch in part.chapters %}
+      <li>
+        <a class="nh-card" href="{{ hub.base | append: ch.file | relative_url }}" data-ch="{{ ch.num }}" data-title="{{ ch.title }}">
+          <span class="nh-card-top">
+            <span class="nh-no">{% if ch.num < 10 %}0{% endif %}{{ ch.num }}</span>
+            <span class="nh-lecture">{{ ch.lecture }}</span>
+          </span>
+          <span class="nh-title">{{ ch.title }}</span>
+          <span class="nh-summary">{{ ch.summary }}</span>
+          <span class="nh-figs"></span>
+        </a>
+      </li>
+      {%- endfor %}
+    </ol>
+  </section>
+  {%- endfor %}
+
+  <div class="nh-viewer" hidden>
+    <div class="nh-bar">
+      <button type="button" class="nh-btn nh-prev" aria-label="이전 장"><i class="fas fa-chevron-left"></i></button>
+      <div class="nh-current">
+        <span class="nh-current-no"></span>
+        <span class="nh-current-title"></span>
+      </div>
+      <button type="button" class="nh-btn nh-next" aria-label="다음 장"><i class="fas fa-chevron-right"></i></button>
+      <span class="nh-sep"></span>
+      <button type="button" class="nh-btn nh-full" aria-label="전체 화면" title="전체 화면"><i class="fas fa-expand"></i></button>
+      <a class="nh-btn nh-open" target="_blank" rel="noopener" aria-label="새 탭에서 열기" title="새 탭에서 열기"><i class="fas fa-up-right-from-square"></i></a>
+    </div>
+    <div class="nh-frame">
+      <iframe class="nh-iframe" title="강의 노트"></iframe>
+      <div class="nh-loading"><span></span>불러오는 중</div>
+    </div>
+  </div>
+</div>
+<script src="{{ '/assets/js/notes-hub.js' | relative_url }}"></script>
